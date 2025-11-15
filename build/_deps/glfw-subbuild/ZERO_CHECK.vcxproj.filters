@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glfw-subbuild\CMakeFiles\54eb652ad6224c09c165e91ed1905f50\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{493259FC-DB62-3C70-9FB7-78575140F6CD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

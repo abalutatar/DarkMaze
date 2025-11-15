@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\59acf7b2900a88ad5fc8e5bb3ea2bf69\glm-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\1fc41e63ffa2d07e86c2e4c8044384a5\glm-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\1889cfb7b4fa078b146e0c706672ae50\glm-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\ZZ0A3L820\Grafika3d\Projekt\DarkMaze\build\_deps\glm-subbuild\CMakeFiles\glm-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{A2D49C66-644C-34E3-9107-7B27B83F24FD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
