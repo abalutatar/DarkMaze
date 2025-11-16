@@ -7,16 +7,16 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 
-// callback zmiany rozmiaru okna
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-// prosty Labyrinth
+
 Labyrinth labyrinth;
 
 // funkcja przygotowująca VAO/VBO dla sześcianu
-unsigned int createCubeVAO() {
+/*unsigned int createCubeVAO() {
     float vertices[] = {
         // pozycje wierzchołków sześcianu (36 wierzchołków, 3 float każdy)
         -0.5f,-0.5f,-0.5f,  0.5f,-0.5f,-0.5f,  0.5f, 0.5f,-0.5f,
@@ -49,6 +49,84 @@ unsigned int createCubeVAO() {
     // pozycje
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    return VAO;
+}*/
+// funkcja przygotowująca VAO/VBO dla sześcianu (positions, normals, texcoords)
+unsigned int createCubeVAO() {
+    float vertices[] = {
+        // positions          // normals           // texcoords
+        // back face
+        -0.5f,-0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    0.0f, 0.0f,
+         0.5f, 0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    1.0f, 1.0f,
+         0.5f,-0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    1.0f, 0.0f,
+         0.5f, 0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    1.0f, 1.0f,
+        -0.5f,-0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    0.0f, 0.0f,
+        -0.5f, 0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    0.0f, 1.0f,
+
+        // front face
+        -0.5f,-0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
+         0.5f,-0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
+         0.5f, 0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
+         0.5f, 0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
+        -0.5f,-0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
+
+        // left face
+        -0.5f, 0.5f, 0.5f,  -1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+        -0.5f, 0.5f,-0.5f,  -1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
+        -0.5f,-0.5f,-0.5f,  -1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+        -0.5f,-0.5f,-0.5f,  -1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+        -0.5f,-0.5f, 0.5f,  -1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f,  -1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+
+        // right face
+         0.5f, 0.5f, 0.5f,   1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+         0.5f,-0.5f,-0.5f,   1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+         0.5f, 0.5f,-0.5f,   1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
+         0.5f,-0.5f,-0.5f,   1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+         0.5f, 0.5f, 0.5f,   1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+         0.5f,-0.5f, 0.5f,   1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
+
+         // bottom face
+         -0.5f,-0.5f,-0.5f,   0.0f,-1.0f, 0.0f,    0.0f, 1.0f,
+          0.5f,-0.5f,-0.5f,   0.0f,-1.0f, 0.0f,    1.0f, 1.0f,
+          0.5f,-0.5f, 0.5f,   0.0f,-1.0f, 0.0f,    1.0f, 0.0f,
+          0.5f,-0.5f, 0.5f,   0.0f,-1.0f, 0.0f,    1.0f, 0.0f,
+         -0.5f,-0.5f, 0.5f,   0.0f,-1.0f, 0.0f,    0.0f, 0.0f,
+         -0.5f,-0.5f,-0.5f,   0.0f,-1.0f, 0.0f,    0.0f, 1.0f,
+
+         // top face
+         -0.5f, 0.5f,-0.5f,   0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+          0.5f, 0.5f, 0.5f,   0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
+          0.5f, 0.5f,-0.5f,   0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+          0.5f, 0.5f, 0.5f,   0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
+         -0.5f, 0.5f,-0.5f,   0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+         -0.5f, 0.5f, 0.5f,   0.0f, 1.0f, 0.0f,    0.0f, 0.0f
+    };
+
+    unsigned int VAO, VBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // layout location 0: position (3 floats)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // layout location 1: normal (3 floats)
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // layout location 2: texcoords (2 floats)
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
@@ -94,6 +172,18 @@ int main() {
     shader.use();
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
+
+    // ustawienia światła (przykładowe wartości) (nowe do głownej petli)
+    glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
+    glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+    glm::vec3 objectColor(0.8f, 0.3f, 0.8f);
+    glm::vec3 cameraPos(5.5f, 8.0f, 15.0f);
+
+    shader.setVec3("lightPos", lightPos);
+    shader.setVec3("lightColor", lightColor);
+    shader.setVec3("objectColor", objectColor);
+    shader.setVec3("viewPos", cameraPos);
+
 
     // główna pętla
     while (!glfwWindowShouldClose(window)) {
