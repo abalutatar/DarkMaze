@@ -30,9 +30,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\LIB\glad\src\glad.c">
-      <Filter>Pliki źródłowe</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
@@ -41,6 +38,9 @@
     </ClCompile>
     <ClCompile Include="src\labyrinth\Labyrinth.cpp">
       <Filter>Pliki źródłowe\labyrinth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\Libs\GLAD\src\glad.c">
+      <Filter>Pliki źródłowe</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -52,6 +52,9 @@
     </ClInclude>
     <ClInclude Include="Labyrinth.h">
       <Filter>Pliki źródłowe\labyrinth</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Pliki źródłowe\player</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
