@@ -12,54 +12,15 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 Labyrinth labyrinth;
 
-// funkcja przygotowująca VAO/VBO dla sześcianu
-/*unsigned int createCubeVAO() {
-    float vertices[] = {
-        // pozycje wierzchołków sześcianu (36 wierzchołków, 3 float każdy)
-        -0.5f,-0.5f,-0.5f,  0.5f,-0.5f,-0.5f,  0.5f, 0.5f,-0.5f,
-         0.5f, 0.5f,-0.5f, -0.5f, 0.5f,-0.5f, -0.5f,-0.5f,-0.5f,
-
-        -0.5f,-0.5f, 0.5f,  0.5f,-0.5f, 0.5f,  0.5f, 0.5f, 0.5f,
-         0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f,-0.5f, 0.5f,
-
-        -0.5f, 0.5f, 0.5f, -0.5f, 0.5f,-0.5f, -0.5f,-0.5f,-0.5f,
-        -0.5f,-0.5f,-0.5f, -0.5f,-0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
-
-         0.5f, 0.5f, 0.5f,  0.5f, 0.5f,-0.5f,  0.5f,-0.5f,-0.5f,
-         0.5f,-0.5f,-0.5f,  0.5f,-0.5f, 0.5f,  0.5f, 0.5f, 0.5f,
-
-        -0.5f,-0.5f,-0.5f,  0.5f,-0.5f,-0.5f,  0.5f,-0.5f, 0.5f,
-         0.5f,-0.5f, 0.5f, -0.5f,-0.5f, 0.5f, -0.5f,-0.5f,-0.5f,
-
-        -0.5f, 0.5f,-0.5f,  0.5f, 0.5f,-0.5f,  0.5f, 0.5f, 0.5f,
-         0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f,-0.5f
-    };
-
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // pozycje
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    return VAO;
-}*/
-// funkcja przygotowująca VAO/VBO dla sześcianu (positions, normals, texcoords)
+// funkcja przygotowująca VAO/VBO dla sześcianu 
 unsigned int createCubeVAO() {
     float vertices[] = {
-        // positions          // normals           // texcoords
-        // back face
+        // pos               // normal          // texcoords
+        // tył
         -0.5f,-0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    0.0f, 0.0f,
          0.5f, 0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    1.0f, 1.0f,
          0.5f,-0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    1.0f, 0.0f,
@@ -67,7 +28,7 @@ unsigned int createCubeVAO() {
         -0.5f,-0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    0.0f, 0.0f,
         -0.5f, 0.5f,-0.5f,   0.0f, 0.0f,-1.0f,    0.0f, 1.0f,
 
-        // front face
+        // przód
         -0.5f,-0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
          0.5f,-0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
          0.5f, 0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
@@ -75,7 +36,7 @@ unsigned int createCubeVAO() {
         -0.5f, 0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
         -0.5f,-0.5f, 0.5f,   0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
 
-        // left face
+        // lewa
         -0.5f, 0.5f, 0.5f,  -1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
         -0.5f, 0.5f,-0.5f,  -1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
         -0.5f,-0.5f,-0.5f,  -1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
@@ -83,7 +44,7 @@ unsigned int createCubeVAO() {
         -0.5f,-0.5f, 0.5f,  -1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
         -0.5f, 0.5f, 0.5f,  -1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
 
-        // right face
+        // prawa
          0.5f, 0.5f, 0.5f,   1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
          0.5f,-0.5f,-0.5f,   1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
          0.5f, 0.5f,-0.5f,   1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
@@ -91,7 +52,7 @@ unsigned int createCubeVAO() {
          0.5f, 0.5f, 0.5f,   1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
          0.5f,-0.5f, 0.5f,   1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
 
-         // bottom face
+         // dół
          -0.5f,-0.5f,-0.5f,   0.0f,-1.0f, 0.0f,    0.0f, 1.0f,
           0.5f,-0.5f,-0.5f,   0.0f,-1.0f, 0.0f,    1.0f, 1.0f,
           0.5f,-0.5f, 0.5f,   0.0f,-1.0f, 0.0f,    1.0f, 0.0f,
@@ -99,7 +60,7 @@ unsigned int createCubeVAO() {
          -0.5f,-0.5f, 0.5f,   0.0f,-1.0f, 0.0f,    0.0f, 0.0f,
          -0.5f,-0.5f,-0.5f,   0.0f,-1.0f, 0.0f,    0.0f, 1.0f,
 
-         // top face
+         // góra
          -0.5f, 0.5f,-0.5f,   0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
           0.5f, 0.5f, 0.5f,   0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
           0.5f, 0.5f,-0.5f,   0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
@@ -128,6 +89,7 @@ unsigned int createCubeVAO() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
+    //odwiązanie buforu i VAO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
@@ -135,14 +97,14 @@ unsigned int createCubeVAO() {
 }
 
 int main() {
-    // inicjalizacja GLFW
-    if (!glfwInit()) { std::cerr << "Failed to init GLFW\n"; return -1; }
+    // Konfiguracja
+    glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Ciemny Labirynt", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Ciemny Labirynt", NULL, NULL);
     if (!window) { std::cerr << "Failed to create GLFW window\n"; glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -151,9 +113,10 @@ int main() {
         std::cerr << "Failed to initialize GLAD\n";
         return -1;
     }
-
+    //włączenie testu głębokości (bliższe elementy zasłaniają dalsze)
     glEnable(GL_DEPTH_TEST);
 
+    //załadowanie shaderów
     Shader shader("src/shaders/vertex_shader.vs", "src/shaders/fragment_shader.fs");
 
     // przygotowanie VAO sześcianu
@@ -164,10 +127,12 @@ int main() {
 
     // kamera i matryca widoku
     glm::mat4 view = glm::lookAt(glm::vec3(5.5f, 8.0f, 15.0f),
-        glm::vec3(5.5f, 0.0f, 5.5f),
-        glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::vec3(5.5f, 0.0f, 5.5f),// kamera za nad i za centrum 8>0 i 15>5.5
+        glm::vec3(0.0f, 1.0f, 0.0f)); // góra
     glm::mat4 projection = glm::perspective(glm::radians(60.0f),
-        800.0f / 600.0f, 0.1f, 100.0f);
+        800.0f / 600.0f, 0.1f, 100.0f); //obiekty poza 0.1f a 100.0f nie będą widoczne
+
+    //aktywacja shaderów i ustawienia w OpenGl
 
     shader.use();
     shader.setMat4("view", view);
@@ -176,7 +141,7 @@ int main() {
     // ustawienia światła (przykładowe wartości) (nowe do głownej petli)
     glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-    glm::vec3 objectColor(0.8f, 0.3f, 0.8f);
+    glm::vec3 objectColor(0.8f, 0.3f, 0.8f); //szary (0.8f, 0.8f, 0.8f)
     glm::vec3 cameraPos(5.5f, 8.0f, 15.0f);
 
     shader.setVec3("lightPos", lightPos);
