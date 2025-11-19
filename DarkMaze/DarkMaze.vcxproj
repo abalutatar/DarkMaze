@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Users\ZZ0A3L820\LIB\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;C:\Users\ZZ0A3L820\LIB\glad\include;C:\Users\ZZ0A3L820\LIB\glm\glm-master\glm</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Users\ZZ0A3L820\LIB\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);C:\Program Files %28x86%29\Microsoft Visual Studio\Libs\glfw-3.4.bin.WIN64\include;C:\Program Files %28x86%29\Microsoft Visual Studio\Libs\GLAD\include;C:\Program Files %28x86%29\Microsoft Visual Studio\Libs\glm</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files %28x86%29\Microsoft Visual Studio\Libs\glfw-3.4.bin.WIN64\lib-vc2022</LibraryPath>
     <PublicIncludeDirectories>src/labyrinth</PublicIncludeDirectories>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -133,7 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\LIB\glad\src\glad.c" />
+    <ClCompile Include="..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\Libs\GLAD\src\glad.c" />
     <ClCompile Include="src\labyrinth\Labyrinth.cpp" />
     <ClCompile Include="src\lighting\Shader.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -142,6 +142,7 @@
     <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Labyrinth.h" />
     <ClInclude Include="src\lighting\Shader.h" />
   </ItemGroup>
