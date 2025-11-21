@@ -19,9 +19,6 @@ public:
     void setFloat(const std::string& name, float value) const;
     void setVec3(const std::string& name, const glm::vec3& value) const;
     void setVec3(const std::string& name, float x, float y, float z) const;
-    void setMat4(const std::string& name, const glm::mat4& mat) const {
-        if (ID) glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
-    }
     void setMat4(const std::string& name, const glm::mat4& mat) const;
 };
 

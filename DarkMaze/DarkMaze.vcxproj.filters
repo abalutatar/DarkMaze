@@ -50,11 +50,11 @@
     <ClInclude Include="src\lighting\Shader.h">
       <Filter>Pliki źródłowe\lighting</Filter>
     </ClInclude>
-    <ClInclude Include="Labyrinth.h">
-      <Filter>Pliki źródłowe\labyrinth</Filter>
-    </ClInclude>
     <ClInclude Include="Camera.h">
       <Filter>Pliki źródłowe\player</Filter>
+    </ClInclude>
+    <ClInclude Include="src\labyrinth\Labyrinth.h">
+      <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

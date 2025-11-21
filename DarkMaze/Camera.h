@@ -1,9 +1,10 @@
-#ifndef CAMERA_H
+﻿#ifndef CAMERA_H
 #define CAMERA_H
 
 #include <glad/glad.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
+#include "src/labyrinth/labyrinth.h"
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -39,6 +40,8 @@ public:
     float MouseSensitivity;
     float Zoom;
 
+    int (*maze)[Labyrinth::COLS];
+
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
@@ -69,13 +72,62 @@ public:
     {
         float velocity = MovementSpeed * deltaTime;
         if (direction == FORWARD)
-            Position += Front * velocity;
+            moveWithSliding(Front, velocity);
         if (direction == BACKWARD)
-            Position -= Front * velocity;
+            moveWithSliding(-Front, velocity);
         if (direction == LEFT)
-            Position -= Right * velocity;
+            moveWithSliding(-Right, velocity);
         if (direction == RIGHT)
-            Position += Right * velocity;
+            moveWithSliding(Right, velocity);
+    }
+
+    void moveWithSliding(glm::vec3 direction, float velocity)
+    {
+        glm::vec3 desired = direction * velocity;
+        glm::vec3 newPos = Position;
+
+        // --- X movement ---
+        glm::vec3 tryX = newPos;
+        tryX.x += desired.x;
+
+        if (!wallsCollision(tryX)) {
+            newPos.x += desired.x;
+        }
+
+        // --- Z movement ---
+        glm::vec3 tryZ = newPos;
+        tryZ.z += desired.z;
+
+        if (!wallsCollision(tryZ)) {
+            newPos.z += desired.z;
+        }
+
+        Position = newPos;
+    }
+
+
+    bool cubeCollision(glm::vec3 cubeMax, glm::vec3 cubeMin, glm::vec3 pos) {
+        return (pos.x >= cubeMin.x && pos.x <= cubeMax.x) &&
+               (pos.y >= cubeMin.y && pos.y <= cubeMax.y) &&
+               (pos.z >= cubeMin.z && pos.z <= cubeMax.z);
+    }
+
+    bool wallsCollision(glm::vec3 pos) {
+        bool isCollideWall = false;
+
+        float cellSize = 1.0f;
+        for (int i = 0; i < Labyrinth::ROWS; i++) {
+            for (int j = 0; j < Labyrinth::COLS; j++) {
+                if (maze[i][j] == 1) {
+                    glm::vec3 cubeMax = glm::vec3(j * cellSize + 0.6f, 1.1f, i * cellSize + 0.6f);
+                    glm::vec3 cubelMin = glm::vec3(j * cellSize - 0.6f, -0.1f, i * cellSize - 0.6f);
+                    isCollideWall = cubeCollision(cubeMax, cubelMin, pos);
+                    if (isCollideWall) return isCollideWall;
+                }
+            }
+        }
+
+        return isCollideWall;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
