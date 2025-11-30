@@ -15,22 +15,33 @@ uniform float constant;
 uniform float linear;
 uniform float quadratic;
 
-// maksymalny zasiêg latarki (poza tym: ca³kowita czerñ)
+// zasiêg latarki
 uniform float cutoff;
-// opcjonalne wyg³adzenie krawêdzi (0 = twardy cutoff, >0 = soft edge in world units)
+// miêkka krawêdŸ latarki (0 = twardo)
 uniform float softCutoff;
 
+// fog params
+uniform vec3 fogColor;   // kolor mg³y
+uniform float fogNear;   // dystans, od którego zaczyna siê mg³a
+uniform float fogFar;    // dystans, przy którym jest pe³na mg³a
+
 void main() {
+    // dystans od œwiat³a
     float dist2 = dot(lightPos - FragPos, lightPos - FragPos);
     float cutoff2 = cutoff * cutoff;
 
-    // poza zasiêgiem - nic nie widaæ (twardy)
+    // poza zasiêgiem latarki – czarno (przed fogiem)
     if (dist2 > cutoff2) {
-        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        // mimo wszystko dodamy mg³ê, ¿eby nie by³o gwa³townego "odciêcia" na granicy
+        float camDist = distance(viewPos, FragPos);
+        float fogFactor = clamp((fogFar - camDist) / (fogFar - fogNear), 0.0, 1.0);
+        vec3 base = vec3(0.0);
+        vec3 finalFogged = mix(fogColor, base, fogFactor);
+        FragColor = vec4(finalFogged, 1.0);
         return;
     }
 
-    // obliczenia oœwietlenia
+    // --- Phong lighting ---
     vec3 ambient = 0.07 * lightColor;
 
     vec3 norm = normalize(Normal);
@@ -45,18 +56,22 @@ void main() {
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     vec3 specular = specStrength * spec * lightColor;
 
-    float distance = sqrt(dist2);
-    float attenuation = 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+    float distanceToLight = sqrt(dist2);
+    float attenuation = 1.0 / (constant + linear * distanceToLight + quadratic * (distanceToLight * distanceToLight));
 
     vec3 lighting = ambient * objectColor + (diffuse + specular) * objectColor * attenuation;
 
-    // opcjonalne wyg³adzenie: przybli¿amy do czerni gdy jesteœmy tu¿ przed cutoff
+    // miêkki cutoff latarki
     if (softCutoff > 0.0) {
         float edgeStart = max(0.0, cutoff - softCutoff);
-        // poprawna kolejnoœæ: edgeStart -> cutoff
-        float factor = smoothstep(edgeStart, cutoff, distance); // 1.0 przy bliskich, 0.0 przy cutoff
+        float factor = smoothstep(edgeStart, cutoff, distanceToLight);
         lighting *= factor;
     }
 
-    FragColor = vec4(lighting, 1.0);
+    // --- Fog (liniowy) ---
+    float camDist = distance(viewPos, FragPos);
+    float fogFactor = clamp((fogFar - camDist) / (fogFar - fogNear), 0.0, 1.0);
+    vec3 finalColor = mix(fogColor, lighting, fogFactor);
+
+    FragColor = vec4(finalColor, 1.0);
 }

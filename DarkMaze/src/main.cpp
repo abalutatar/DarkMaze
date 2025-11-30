@@ -155,6 +155,12 @@ int main() {
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
     glm::vec3 objectColor(0.8f, 0.3f, 0.8f);
 
+    // kolor i zakres mgły
+    glm::vec3 fogColor(0.15f, 0.15f, 0.18f); // lekko niebieskawo-szary, pasuje do „ciemnego labiryntu”
+    float fogNear = 0.0f;   // zaczyna się 2 jednostki od kamery
+    float fogFar = 2.8f;  // pełna mgła przy 12 jednostkach
+
+
     // ustawienia tłumienia (typowe wartości)
     float att_constant = 1.0f;
     float att_linear = 0.35f;
@@ -201,6 +207,11 @@ int main() {
         shader.setFloat("cutoff", lightRange);
         // koniecznie ustaw softCutoff (0 = twardy)
         shader.setFloat("softCutoff", 0.0f);
+
+        // mgła
+        shader.setVec3("fogColor", fogColor);
+        shader.setFloat("fogNear", fogNear);
+        shader.setFloat("fogFar", fogFar);
 
         labyrinth.drawLabyrinth(shader, cubeVAO);
 
