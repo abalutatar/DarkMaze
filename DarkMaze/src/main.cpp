@@ -166,8 +166,9 @@ int main() {
     float att_linear = 0.35f;
     float att_quadratic = 0.44f;
 
-    // maksymalny zasięg latarki (poza tym: całkowita czerń)
-    float lightRange = 4.0f; // dopasuj: mniejsze = krótszy zasięg
+    float lightIntensity = 1.0f; // 0.0–1.0
+    float lightRange = 4.0f;     // zasięg latarki
+
 
     // główna pętla
     while (!glfwWindowShouldClose(window)) {
@@ -179,6 +180,17 @@ int main() {
         // input
         // -----
         processInput(window);
+
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+            lightIntensity = glm::min(1.0f, lightIntensity + 0.5f * deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+            lightIntensity = glm::max(0.0f, lightIntensity - 0.5f * deltaTime);
+
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            lightRange = glm::min(10.0f, lightRange + 1.5f * deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+            lightRange = glm::max(1.0f, lightRange - 1.5f * deltaTime);
+
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -207,6 +219,8 @@ int main() {
         shader.setFloat("cutoff", lightRange);
         // koniecznie ustaw softCutoff (0 = twardy)
         shader.setFloat("softCutoff", 0.0f);
+        shader.setFloat("lightIntensity", lightIntensity);
+
 
         // mgła
         shader.setVec3("fogColor", fogColor);

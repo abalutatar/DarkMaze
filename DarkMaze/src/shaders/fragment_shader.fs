@@ -25,6 +25,9 @@ uniform vec3 fogColor;   // kolor mg³y
 uniform float fogNear;   // dystans, od którego zaczyna siê mg³a
 uniform float fogFar;    // dystans, przy którym jest pe³na mg³a
 
+// intensywnoœæ œwiat³a (0.0–1.0)
+uniform float lightIntensity;
+
 void main() {
     // dystans od œwiat³a
     float dist2 = dot(lightPos - FragPos, lightPos - FragPos);
@@ -32,11 +35,9 @@ void main() {
 
     // poza zasiêgiem latarki – czarno (przed fogiem)
     if (dist2 > cutoff2) {
-        // mimo wszystko dodamy mg³ê, ¿eby nie by³o gwa³townego "odciêcia" na granicy
         float camDist = distance(viewPos, FragPos);
         float fogFactor = clamp((fogFar - camDist) / (fogFar - fogNear), 0.0, 1.0);
-        vec3 base = vec3(0.0);
-        vec3 finalFogged = mix(fogColor, base, fogFactor);
+        vec3 finalFogged = mix(fogColor, vec3(0.0), fogFactor);
         FragColor = vec4(finalFogged, 1.0);
         return;
     }
@@ -59,7 +60,8 @@ void main() {
     float distanceToLight = sqrt(dist2);
     float attenuation = 1.0 / (constant + linear * distanceToLight + quadratic * (distanceToLight * distanceToLight));
 
-    vec3 lighting = ambient * objectColor + (diffuse + specular) * objectColor * attenuation;
+    // intensywnoœæ wp³ywa na ca³e oœwietlenie
+    vec3 lighting = (ambient * objectColor + diffuse * objectColor * attenuation + specular * attenuation) * lightIntensity;
 
     // miêkki cutoff latarki
     if (softCutoff > 0.0) {
