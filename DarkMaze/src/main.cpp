@@ -139,6 +139,8 @@ int main() {
 
     //załadowanie shaderów
     Shader shader("src/shaders/vertex_shader.vs", "src/shaders/fragment_shader.fs");
+    // shader dla wizualnej "latarki"
+    Shader lampShader("src/shaders/lamp_vertex.vs", "src/shaders/lamp_fragment.fs");
 
     // przygotowanie VAO sześcianu
     unsigned int cubeVAO = createCubeVAO();
@@ -149,17 +151,17 @@ int main() {
 
     shader.use();
 
-    // ustawienia światła (przykładowe wartości) (nowe do głownej petli)
-    glm::vec3 lightPos(5.0f, 10.0f, 5.0f);
+    // początkowe wartości (będą aktualizowane co klatkę)
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
-    glm::vec3 objectColor(0.8f, 0.3f, 0.8f); //szary (0.8f, 0.8f, 0.8f)
-    glm::vec3 cameraPos(5.5f, 8.0f, 15.0f);
+    glm::vec3 objectColor(0.8f, 0.3f, 0.8f);
 
-    shader.setVec3("lightPos", lightPos);
-    shader.setVec3("lightColor", lightColor);
-    shader.setVec3("objectColor", objectColor);
-    shader.setVec3("viewPos", cameraPos);
+    // ustawienia tłumienia (typowe wartości)
+    float att_constant = 1.0f;
+    float att_linear = 0.35f;
+    float att_quadratic = 0.44f;
 
+    // maksymalny zasięg latarki (poza tym: całkowita czerń)
+    float lightRange = 4.0f; // dopasuj: mniejsze = krótszy zasięg
 
     // główna pętla
     while (!glfwWindowShouldClose(window)) {
@@ -175,6 +177,10 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Aktualizuj pozycję światła — podążaj za kamerą.
+        // Mały offset do przodu, żeby nie znajdować się dokładnie wewnątrz kamery.
+        glm::vec3 lightPos = camera.Position + camera.Front * 0.1f + glm::vec3(0.0f, -0.05f, 0.0f);
+
         shader.use();
         // pass projection matrix to shader (note that in this case it could change every frame)
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
@@ -184,7 +190,36 @@ int main() {
         glm::mat4 view = camera.GetViewMatrix();
         shader.setMat4("view", view);
 
+        // ustawienia światła w shaderze (co klatkę)
+        shader.setVec3("lightPos", lightPos);
+        shader.setVec3("lightColor", lightColor);
+        shader.setVec3("objectColor", objectColor);
+        shader.setVec3("viewPos", camera.Position);
+        shader.setFloat("constant", att_constant);
+        shader.setFloat("linear", att_linear);
+        shader.setFloat("quadratic", att_quadratic);
+        shader.setFloat("cutoff", lightRange);
+        // koniecznie ustaw softCutoff (0 = twardy)
+        shader.setFloat("softCutoff", 0.0f);
+
         labyrinth.drawLabyrinth(shader, cubeVAO);
+
+        // --- usuń lub zakomentuj ten blok jeśli nie chcesz widocznej kostki ---
+/*
+        // narysuj małą kostkę reprezentującą latarkę
+        lampShader.use();
+        lampShader.setMat4("projection", projection);
+        lampShader.setMat4("view", view);
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.1f)); // mała
+        lampShader.setMat4("model", model);
+        lampShader.setVec3("lightColor", lightColor);
+
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        */
 
         glfwSwapBuffers(window);
         glfwPollEvents();
