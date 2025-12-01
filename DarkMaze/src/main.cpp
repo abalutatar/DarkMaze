@@ -7,6 +7,11 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 #include "../Camera.h"
+#include "../Item.h"
+#include <vector>
+
+std::vector<Item> activeItems;
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -70,7 +75,6 @@ unsigned int createCubeVAO() {
          -0.5f, 0.5f,-0.5f,   0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
          -0.5f, 0.5f, 0.5f,   0.0f, 1.0f, 0.0f,    0.0f, 0.0f
     };
-
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -92,6 +96,87 @@ unsigned int createCubeVAO() {
     glEnableVertexAttribArray(2);
 
     //odwiązanie buforu i VAO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    return VAO;
+}
+
+unsigned int createCylinderVAO(int segments = 24) {
+    std::vector<float> vertices;
+    const float radius = 0.5f;
+    const float halfH = 0.5f;
+
+    // bok walca (tri strip rozbity na trójkąty)
+    for (int i = 0; i < segments; ++i) {
+        float a0 = (float)i / segments * 2.0f * 3.1415926f;
+        float a1 = (float)(i + 1) / segments * 2.0f * 3.1415926f;
+        float x0 = cos(a0), z0 = sin(a0);
+        float x1 = cos(a1), z1 = sin(a1);
+
+        // dwa trójkąty paska
+        // v0
+        vertices.insert(vertices.end(), { radius * x0, -halfH, radius * z0,  x0, 0.0f, z0,  (float)i / segments, 0.0f });
+        // v1
+        vertices.insert(vertices.end(), { radius * x0,  halfH, radius * z0,  x0, 0.0f, z0,  (float)i / segments, 1.0f });
+        // v2
+        vertices.insert(vertices.end(), { radius * x1,  halfH, radius * z1,  x1, 0.0f, z1,  (float)(i + 1) / segments, 1.0f });
+
+        // v0
+        vertices.insert(vertices.end(), { radius * x0, -halfH, radius * z0,  x0, 0.0f, z0,  (float)i / segments, 0.0f });
+        // v2
+        vertices.insert(vertices.end(), { radius * x1,  halfH, radius * z1,  x1, 0.0f, z1,  (float)(i + 1) / segments, 1.0f });
+        // v3
+        vertices.insert(vertices.end(), { radius * x1, -halfH, radius * z1,  x1, 0.0f, z1,  (float)(i + 1) / segments, 0.0f });
+    }
+
+    // górna pokrywa (trójkąty fan)
+    for (int i = 0; i < segments; ++i) {
+        float a0 = (float)i / segments * 2.0f * 3.1415926f;
+        float a1 = (float)(i + 1) / segments * 2.0f * 3.1415926f;
+        float x0 = cos(a0), z0 = sin(a0);
+        float x1 = cos(a1), z1 = sin(a1);
+
+        // center
+        vertices.insert(vertices.end(), { 0.0f, halfH, 0.0f,  0.0f, 1.0f, 0.0f,  0.5f, 0.5f });
+        // edge0
+        vertices.insert(vertices.end(), { radius * x0, halfH, radius * z0,  0.0f, 1.0f, 0.0f,  0.5f + 0.5f * x0, 0.5f + 0.5f * z0 });
+        // edge1
+        vertices.insert(vertices.end(), { radius * x1, halfH, radius * z1,  0.0f, 1.0f, 0.0f,  0.5f + 0.5f * x1, 0.5f + 0.5f * z1 });
+    }
+
+    // dolna pokrywa (trójkąty fan)
+    for (int i = 0; i < segments; ++i) {
+        float a0 = (float)i / segments * 2.0f * 3.1415926f;
+        float a1 = (float)(i + 1) / segments * 2.0f * 3.1415926f;
+        float x0 = cos(a0), z0 = sin(a0);
+        float x1 = cos(a1), z1 = sin(a1);
+
+        // center
+        vertices.insert(vertices.end(), { 0.0f, -halfH, 0.0f,  0.0f, -1.0f, 0.0f,  0.5f, 0.5f });
+        // edge1 (odwrócona kolejność dla poprawnego front-face)
+        vertices.insert(vertices.end(), { radius * x1, -halfH, radius * z1,  0.0f, -1.0f, 0.0f,  0.5f + 0.5f * x1, 0.5f + 0.5f * z1 });
+        // edge0
+        vertices.insert(vertices.end(), { radius * x0, -halfH, radius * z0,  0.0f, -1.0f, 0.0f,  0.5f + 0.5f * x0, 0.5f + 0.5f * z0 });
+    }
+
+    unsigned int VAO, VBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
@@ -144,10 +229,28 @@ int main() {
 
     // przygotowanie VAO sześcianu
     unsigned int cubeVAO = createCubeVAO();
+    unsigned int cylinderVAO = createCylinderVAO(24);
+    int cylinderVertexCount = 24 * 6   // bok: na każdy segment 2 trójkąty = 6 wierzchołków
+        + 24 * 3 // pokrywa górna: 1 trójkąt na segment
+        + 24 * 3; // pokrywa dolna
+
 
     // generowanie labiryntu
     labyrinth.generateMaze();
     camera.maze = labyrinth.maze;
+
+    // przykładowe obiekty w labiryncie
+    activeItems.push_back(Item(glm::vec3(2.0f, 0.5f, 3.0f), ItemType::KEY));
+   // activeItems.push_back(Item(glm::vec3(6.0f, 0.5f, 2.0f), ItemType::KEY));
+   // activeItems.push_back(Item(glm::vec3(8.0f, 0.5f, 7.0f), ItemType::KEY));
+
+    activeItems.push_back(Item(glm::vec3(3.0f, 0.5f, 5.0f), ItemType::BATTERY));
+    activeItems.push_back(Item(glm::vec3(7.0f, 0.5f, 4.0f), ItemType::BATTERY));
+    activeItems.push_back(Item(glm::vec3(5.0f, 0.5f, 8.0f), ItemType::BATTERY));
+    activeItems.push_back(Item(glm::vec3(9.0f, 0.5f, 3.0f), ItemType::BATTERY));
+    activeItems.push_back(Item(glm::vec3(10.0f, 0.5f, 6.0f), ItemType::BATTERY));
+
+
 
     shader.use();
 
@@ -228,6 +331,54 @@ int main() {
         shader.setFloat("fogFar", fogFar);
 
         labyrinth.drawLabyrinth(shader, cubeVAO);
+
+        for (auto& item : activeItems) {
+            if (!item.collected) {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, item.position);
+
+                if (item.type == ItemType::KEY) {
+                    // kolor klucza (np. granatowy)
+                    shader.setVec3("objectColor", glm::vec3(0.1f, 0.1f, 0.6f));
+                    // mniejszy sześcian
+                    model = glm::scale(model, glm::vec3(0.2f));
+                    shader.setMat4("model", model);
+
+                    glBindVertexArray(cubeVAO);
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                    glBindVertexArray(0);
+                }
+                else if (item.type == ItemType::BATTERY) {
+                    // kolor baterii (np. czerwony)
+                    shader.setVec3("objectColor", glm::vec3(0.8f, 0.1f, 0.1f));
+                    // walec – smuklejszy i wyższy
+                    model = glm::scale(model, glm::vec3(0.2f, 0.5f, 0.2f));
+                    shader.setMat4("model", model);
+
+                    glBindVertexArray(cylinderVAO);
+                    glDrawArrays(GL_TRIANGLES, 0, cylinderVertexCount);
+                    glBindVertexArray(0);
+                }
+            }
+        }
+
+
+        for (auto& item : activeItems) {
+            if (!item.collected) {
+                float dist = glm::distance(camera.Position, item.position);
+                if (dist < 0.5f) { // próg kolizji
+                    item.collected = true;
+                    if (item.type == ItemType::KEY) {
+                        std::cout << "Zebrano klucz!\n";
+                    }
+                    else if (item.type == ItemType::BATTERY) {
+                        std::cout << "Zebrano baterię!\n";
+                        lightRange += 2.0f; // np. zwiększ zasięg latarki
+                    }
+                }
+            }
+        }
+
 
         // --- usuń lub zakomentuj ten blok jeśli nie chcesz widocznej kostki ---
 /*
