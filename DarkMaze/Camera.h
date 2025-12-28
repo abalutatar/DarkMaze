@@ -5,6 +5,9 @@
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include "src/labyrinth/labyrinth.h"
+#include "Item.h"
+#include <GLFW/glfw3.h>
+#include <iostream>
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -39,7 +42,11 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
-
+    int keysCollected = 0;
+    float baseLightRange = 2.5f;      // ZMNIEJSZONE: Startowa widoczność (było 4.0)
+    float boostedLightRange = 10.0f;  // Zasięg po baterii
+    float lightEffectEndTime = 0.0f;  // Czas wygaśnięcia bonusu
+    bool isGameOver = false; // Dodaj to w sekcji public:
     int (*maze)[Labyrinth::COLS];
 
     // constructor with vectors
@@ -68,20 +75,32 @@ public:
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    void ProcessKeyboard(Camera_Movement direction, float deltaTime, std::vector<Item>& activeItems, float& lightRange, float currentFrame)
     {
         float velocity = MovementSpeed * deltaTime;
-        if (direction == FORWARD)
-            moveWithSliding(Front, velocity);
-        if (direction == BACKWARD)
-            moveWithSliding(-Front, velocity);
-        if (direction == LEFT)
-            moveWithSliding(-Right, velocity);
-        if (direction == RIGHT)
-            moveWithSliding(Right, velocity);
+        moveWithSliding(directionVector(direction), velocity, activeItems, lightRange, currentFrame);
     }
 
-    void moveWithSliding(glm::vec3 direction, float velocity)
+    glm::vec3 directionVector(Camera_Movement direction) {
+        if (direction == FORWARD) return Front;
+        if (direction == BACKWARD) return -Front;
+        if (direction == LEFT) return -Right;
+        if (direction == RIGHT) return Right;
+        return glm::vec3(0.0f);
+        /*if (direction == FORWARD)
+            moveWithSliding(Front, velocity, activeItems);
+
+        if (direction == BACKWARD)
+            moveWithSliding(-Front, velocity, activeItems);
+        if (direction == LEFT)
+            moveWithSliding(-Right, velocity, activeItems);
+        if (direction == RIGHT)
+            moveWithSliding(Right, velocity, activeItems); */
+        
+    }
+
+    void moveWithSliding(glm::vec3 direction, float velocity, std::vector<Item>& activeItems, float& lightRange, float currentFrame)
+
     {
         glm::vec3 desired = direction * velocity;
         glm::vec3 newPos = Position;
@@ -89,22 +108,106 @@ public:
         // --- X movement ---
         glm::vec3 tryX = newPos;
         tryX.x += desired.x;
-
-        if (!wallsCollision(tryX)) {
+        //handleItems(tryX, activeItems, lightRange, currentFrame);
+        if (!wallsCollision(tryX, activeItems)) {
             newPos.x += desired.x;
         }
 
         // --- Z movement ---
         glm::vec3 tryZ = newPos;
         tryZ.z += desired.z;
-
-        if (!wallsCollision(tryZ)) {
+        //handleItems(tryZ, activeItems, lightRange, currentFrame);
+        if (!wallsCollision(tryZ, activeItems)) {
             newPos.z += desired.z;
         }
 
         Position = newPos;
+        handleItems(Position, activeItems, lightRange, currentFrame);
     }
+    void handleItems(glm::vec3 tryPos, std::vector<Item>& activeItems, float& lightRange, float currentFrame)
+    {
+      
 
+        for (auto& item : activeItems) {
+            if (!item.collected || item.type == ItemType::EXIT) {
+                float dist = glm::distance(tryPos, item.position);
+                if (dist < 0.5f) {
+                    if (item.type == ItemType::BATTERY && !item.collected) {
+                        item.collected = true;
+                        float currentTime = (float)glfwGetTime();
+
+                        // Jeśli bonus już trwa, dodajemy czas. Jeśli nie, liczymy od teraz.
+                        if (lightEffectEndTime > currentTime)
+                            lightEffectEndTime += 45.0f;
+                        else
+                            lightEffectEndTime = currentTime + 45.0f;
+                    }
+                    else if (item.type == ItemType::KEY && !item.collected) {
+                        item.collected = true;
+                        keysCollected++;
+                        std::cout << "Klucz zebrany! (" << keysCollected << "/3)\n";
+                    }
+                    // Camera.h -> handleItems
+                    // Camera.h -> handleItems
+                    else if (item.type == ItemType::TRAP) {
+
+                        float speed = 2.0f;
+                        float wave = (sin(currentFrame * speed) + 1.0f) / 2.0f;
+
+                        // zapadnia zamknięta → NIGDY nie zabija
+                        if (wave <= 0.75f)
+                            continue; // ✅ NIE return
+
+                        // sprawdzamy tylko XZ
+                        float distXZ = glm::distance(
+                            glm::vec2(tryPos.x, tryPos.z),
+                            glm::vec2(item.position.x, item.position.z)
+                        );
+
+                        // promień OTWORU (mniejszy niż kostka!)
+                        if (distXZ < 0.25f) {
+                            isGameOver = true;
+                            std::cout << "PRZEGRANA! Wpadles w otwarta zapadnie.\n";
+                        }
+                    }
+
+                    /*
+
+                    else if (item.type == ItemType::EXIT && !item.collected) {
+
+                        if (keysCollected >= 3) {
+                            std::cout << "Zwyciestwo!\n";
+                            // Tutaj najlepiej ustawić flagę w main, ale na razie wypiszmy w konsoli
+                        }
+                    }*/
+                    else if (item.type == ItemType::EXIT) {
+
+                        float distXZ = glm::distance(
+                            glm::vec2(tryPos.x, tryPos.z),
+                            glm::vec2(item.position.x, item.position.z)
+                        );
+
+                        // Gracz podszedł do drzwi
+                        if (distXZ < 0.6f) {
+
+                            if (keysCollected >= 3) {
+                                std::cout << "Drzwi sie otwieraja...\n";
+                                std::cout << "Zwyciestwo!\n";
+                                item.collected = true;  
+                                isGameOver = true; // albo osobna flaga WIN
+                                lightEffectEndTime = currentFrame + 9999.0f;
+
+                            }
+                            else {
+                                std::cout << "Drzwi sa zamkniete. Potrzebujesz 3 kluczy.\n";
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
 
     bool cubeCollision(glm::vec3 cubeMax, glm::vec3 cubeMin, glm::vec3 pos) {
         return (pos.x >= cubeMin.x && pos.x <= cubeMax.x) &&
@@ -112,22 +215,53 @@ public:
                (pos.z >= cubeMin.z && pos.z <= cubeMax.z);
     }
 
-    bool wallsCollision(glm::vec3 pos) {
-        bool isCollideWall = false;
+
+    bool wallsCollision(glm::vec3 pos, const std::vector<Item>& activeItems) {
 
         float cellSize = 1.0f;
+
+        // 1) Kolizja ze ścianami labiryntu
         for (int i = 0; i < Labyrinth::ROWS; i++) {
             for (int j = 0; j < Labyrinth::COLS; j++) {
                 if (maze[i][j] == 1) {
-                    glm::vec3 cubeMax = glm::vec3(j * cellSize + 0.6f, 1.1f, i * cellSize + 0.6f);
-                    glm::vec3 cubelMin = glm::vec3(j * cellSize - 0.6f, -0.1f, i * cellSize - 0.6f);
-                    isCollideWall = cubeCollision(cubeMax, cubelMin, pos);
-                    if (isCollideWall) return isCollideWall;
+
+                    glm::vec3 cubeMax(
+                        j * cellSize + 0.6f,
+                        1.1f,
+                        i * cellSize + 0.6f
+                    );
+
+                    glm::vec3 cubeMin(
+                        j * cellSize - 0.6f,
+                        -0.1f,
+                        i * cellSize - 0.6f
+                    );
+
+                    if (cubeCollision(cubeMax, cubeMin, pos))
+                        return true;
                 }
             }
         }
 
-        return isCollideWall;
+        // 2) Kolizja z DRZWIAMI (EXIT)
+        for (const auto& item : activeItems) {
+
+            if (item.type != ItemType::EXIT)
+                continue;
+
+            // drzwi OTWARTE → brak kolizji
+            if (item.collected || keysCollected >= 3)
+                continue;
+
+            // drzwi ZAMKNIĘTE → blokują jak ściana
+            glm::vec3 doorMax = item.position + glm::vec3(0.5f, 1.0f, 0.5f);
+            glm::vec3 doorMin = item.position - glm::vec3(0.5f, 0.0f, 0.5f);
+
+            if (cubeCollision(doorMax, doorMin, pos))
+                return true;
+        }
+
+        return false;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.

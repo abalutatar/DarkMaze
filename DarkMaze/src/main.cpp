@@ -8,19 +8,22 @@
 #include <gtc/type_ptr.hpp>
 #include "../Camera.h"
 #include "../Item.h"
+
 #include <vector>
 
 std::vector<Item> activeItems;
+//HUDState hud;
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, float& lightRange);
+void renderMiniMap(Shader& shader, Labyrinth& labyrinth, std::vector<Item>& activeItems, Camera& camera, unsigned int cubeVAO);
 
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1200;  // zamiast 800
+const unsigned int SCR_HEIGHT = 900; //zamiast 600
 Labyrinth labyrinth;
 
 // funkcja przygotowująca VAO/VBO dla sześcianu 
@@ -226,7 +229,11 @@ int main() {
     Shader shader("src/shaders/vertex_shader.vs", "src/shaders/fragment_shader.fs");
     // shader dla wizualnej "latarki"
     Shader lampShader("src/shaders/lamp_vertex.vs", "src/shaders/lamp_fragment.fs");
-
+   /* Shader hudShader(
+        "src/shaders/hud_vertex.vs",
+        "src/shaders/hud_fragment.fs"
+    );
+    */
     // przygotowanie VAO sześcianu
     unsigned int cubeVAO = createCubeVAO();
     unsigned int cylinderVAO = createCylinderVAO(24);
@@ -236,20 +243,28 @@ int main() {
 
 
     // generowanie labiryntu
-    labyrinth.generateMaze();
+    labyrinth.generateMaze(activeItems); // Przekazujemy wektor do uzupełnienia
     camera.maze = labyrinth.maze;
-
+    /*
     // przykładowe obiekty w labiryncie
     activeItems.push_back(Item(glm::vec3(2.0f, 0.5f, 3.0f), ItemType::KEY));
-   // activeItems.push_back(Item(glm::vec3(6.0f, 0.5f, 2.0f), ItemType::KEY));
-   // activeItems.push_back(Item(glm::vec3(8.0f, 0.5f, 7.0f), ItemType::KEY));
+    activeItems.push_back(Item(glm::vec3(6.0f, 0.5f, 2.0f), ItemType::KEY));
+    activeItems.push_back(Item(glm::vec3(8.0f, 0.5f, 7.0f), ItemType::KEY));
 
     activeItems.push_back(Item(glm::vec3(3.0f, 0.5f, 5.0f), ItemType::BATTERY));
     activeItems.push_back(Item(glm::vec3(7.0f, 0.5f, 4.0f), ItemType::BATTERY));
     activeItems.push_back(Item(glm::vec3(5.0f, 0.5f, 8.0f), ItemType::BATTERY));
     activeItems.push_back(Item(glm::vec3(9.0f, 0.5f, 3.0f), ItemType::BATTERY));
     activeItems.push_back(Item(glm::vec3(10.0f, 0.5f, 6.0f), ItemType::BATTERY));
+    // przykładowe pułapki
+    activeItems.push_back(Item(glm::vec3(4.0f, 0.5f, 4.0f), ItemType::TRAP));
+    activeItems.push_back(Item(glm::vec3(6.0f, 0.5f, 6.0f), ItemType::TRAP));
 
+    // wyjście – początkowo zablokowane
+    activeItems.push_back(Item(glm::vec3(10.0f, 0.5f, 10.0f), ItemType::EXIT));
+    activeItems.back().collected = true; // zablokowane do czasu zebrania kluczy
+
+    */
 
 
     shader.use();
@@ -259,20 +274,22 @@ int main() {
     glm::vec3 objectColor(0.8f, 0.3f, 0.8f);
 
     // kolor i zakres mgły
-    glm::vec3 fogColor(0.15f, 0.15f, 0.18f); // lekko niebieskawo-szary, pasuje do „ciemnego labiryntu”
-    float fogNear = 0.0f;   // zaczyna się 2 jednostki od kamery
-    float fogFar = 2.8f;  // pełna mgła przy 12 jednostkach
+    //glm::vec3 fogColor(0.15f, 0.15f, 0.18f); // lekko niebieskawo-szary, pasuje do „ciemnego labiryntu”
+    glm::vec3 fogColor(0.02f, 0.02f, 0.04f);
+    float fogNear = 0.5f;//1.0f;   // zaczyna się 2 jednostki od kamery
+    float fogFar = 15.0f;  // pełna mgła przy 12 jednostkach
 
 
     // ustawienia tłumienia (typowe wartości)
     float att_constant = 1.0f;
-    float att_linear = 0.35f;
-    float att_quadratic = 0.44f;
+    float att_linear = 0.7f;
+    float att_quadratic = 0.017f;
 
     float lightIntensity = 1.0f; // 0.0–1.0
-    float lightRange = 4.0f;     // zasięg latarki
+    float lightRange = 0.8f;// 4.0f;     // zasięg latarki
+    
 
-
+    int keysCollected = 0;
     // główna pętla
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
@@ -280,10 +297,28 @@ int main() {
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        if (currentFrame < camera.lightEffectEndTime) {
+            // Bonus trwa
+            lightRange = camera.boostedLightRange;
+        }
+        else {
+            // Bonus wygasł (lub wcale go nie było)
+            lightRange = camera.baseLightRange;
+        }
+        shader.setFloat("cutoff", lightRange);
+        shader.setFloat("fogFar", lightRange + 1.0f);
         // input
         // -----
-        processInput(window);
-
+        //processInput(window,lightRange);
+        if (!camera.isGameOver) {
+            processInput(window, lightRange); // Gracz może się ruszać tylko jeśli żyje
+        }
+        else {
+            // Logika po przegranej: możesz np. zmienić kolor światła na czerwony
+            lightIntensity = glm::max(0.0f, lightIntensity - 2.0f * deltaTime);
+            shader.use();
+            shader.setFloat("lightIntensity", lightIntensity);
+        }
         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
             lightIntensity = glm::min(1.0f, lightIntensity + 0.5f * deltaTime);
         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
@@ -312,25 +347,42 @@ int main() {
         shader.setMat4("view", view);
 
         // ustawienia światła w shaderze (co klatkę)
-        shader.setVec3("lightPos", lightPos);
+        //shader.setVec3("lightPos", lightPos);
+        shader.setVec3("lightPos", camera.Position);
         shader.setVec3("lightColor", lightColor);
         shader.setVec3("objectColor", objectColor);
         shader.setVec3("viewPos", camera.Position);
         shader.setFloat("constant", att_constant);
         shader.setFloat("linear", att_linear);
         shader.setFloat("quadratic", att_quadratic);
-        shader.setFloat("cutoff", lightRange);
+        //shader.setFloat("cutoff", lightRange);
         // koniecznie ustaw softCutoff (0 = twardy)
-        shader.setFloat("softCutoff", 0.0f);
+        //shader.setFloat("softCutoff", 0.0f);
         shader.setFloat("lightIntensity", lightIntensity);
 
 
         // mgła
         shader.setVec3("fogColor", fogColor);
         shader.setFloat("fogNear", fogNear);
-        shader.setFloat("fogFar", fogFar);
-
+        //shader.setFloat("fogFar", fogFar);
+        shader.setFloat("cutoff", lightRange);
+        shader.setFloat("softCutoff", 1.5f); // Dodaj miękką krawędź (bardzo ważne dla smoothstep!)
+        shader.setFloat("fogFar", lightRange + 1.0f);
         labyrinth.drawLabyrinth(shader, cubeVAO);
+        /*
+        updateHUD(hud, camera, camera.keysCollected, lightRange);
+
+        drawHUD(
+            hudShader,
+            cubeVAO,
+            hud,
+            SCR_WIDTH,
+            SCR_HEIGHT
+        );
+        */
+        // mini-mapa w prawym dolnym rogu
+        //renderMiniMap(shader, labyrinth, activeItems, camera, cubeVAO);
+
 
         for (auto& item : activeItems) {
             if (!item.collected) {
@@ -359,10 +411,47 @@ int main() {
                     glDrawArrays(GL_TRIANGLES, 0, cylinderVertexCount);
                     glBindVertexArray(0);
                 }
+                // main.cpp -> fragment rysujący TRAP
+                // main.cpp -> fragment rysujący TRAP
+                else if (item.type == ItemType::TRAP) {
+                    shader.setVec3("objectColor", glm::vec3(0.1f, 0.4f, 0.1f));
+
+                    float time = (float)glfwGetTime();
+                    float speed = 2.0f;
+                    float wave = (sin(time * speed) + 1.0f) / 2.0f;
+
+                    float openAmount = 0.0f;
+                    // Synchronizacja z Camera.h (próg 0.75)
+                    if (wave > 0.75f) {
+                        openAmount = (wave - 0.75f) * 4.0f; // Ruch w dół
+                    }
+
+                    glm::mat4 model = glm::mat4(1.0f);
+                    // Przesunięcie
+                    model = glm::translate(model, glm::vec3(item.position.x, 0.0f - openAmount, item.position.z));
+
+                    // ZMNIEJSZONO: Skala X i Z z 1.0f na 0.7f
+                    model = glm::scale(model, glm::vec3(0.7f, 0.02f, 0.7f));
+
+                    shader.setMat4("model", model);
+
+                    glBindVertexArray(cubeVAO);
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+                else if (item.type == ItemType::EXIT) {
+                    shader.setVec3("objectColor", glm::vec3(0.0f, 1.0f, 0.0f)); // zielony
+
+                    model = glm::scale(model, glm::vec3(0.2f, 2.0f, 1.0f)); // drzwi
+                    shader.setMat4("model", model);
+
+                    glBindVertexArray(cubeVAO);
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+
             }
         }
 
-
+/*
         for (auto& item : activeItems) {
             if (!item.collected) {
                 float dist = glm::distance(camera.Position, item.position);
@@ -375,6 +464,50 @@ int main() {
                         std::cout << "Zebrano baterię!\n";
                         lightRange += 2.0f; // np. zwiększ zasięg latarki
                     }
+                }
+            }
+        }*/
+        /*     
+
+        for (auto& item : activeItems) {
+            if (!item.collected) {
+                float dist = glm::distance(camera.Position, item.position);
+                if (dist < 0.5f) {
+                    if (item.type == ItemType::KEY) {
+                        item.collected = true;
+                        keysCollected++;
+                        std::cout << "Zebrano klucz! (" << keysCollected << "/3)\n";
+                    }
+                    else if (item.type == ItemType::BATTERY) {
+                        item.collected = true;
+                        // Logika kumulacji czasu (2 minuty = 120s)
+                        if (lightEffectEndTime > currentFrame) {
+                            lightEffectEndTime += 45.0f;
+                        }
+                        else {
+                            lightEffectEndTime = currentFrame + 45.0f;
+                        }
+                    }
+                    else if (item.type == ItemType::TRAP && !item.collected) {
+                        std::cout << "Pułapka! Straciłeś życie lub zatrzymano ruch.\n";
+                        // np. cofnięcie gracza
+                        camera.Position -= camera.Front * 0.5f;
+                        item.collected = true;
+                    }
+                    else if (item.type == ItemType::EXIT && !item.collected) {
+                        std::cout << "Gratulacje! Ukończyłeś poziom!\n";
+                        glfwSetWindowShouldClose(window, true);
+                    }
+                }
+            }
+        }
+         */
+        // Odblokowanie wyjścia po zebraniu 3 kluczy
+        if (camera.keysCollected >= 3) {
+            for (auto& item : activeItems) {
+                if (item.type == ItemType::EXIT && item.collected == true) {
+                    item.collected = false; // teraz dostępne
+                    std::cout << "Wyjście odblokowane!\n";
                 }
             }
         }
@@ -412,19 +545,20 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow* window, float& lightRange)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    float currentFrame = (float)glfwGetTime();
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(FORWARD, deltaTime, activeItems, lightRange, currentFrame);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
+        camera.ProcessKeyboard(BACKWARD, deltaTime, activeItems, lightRange, currentFrame);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
+        camera.ProcessKeyboard(LEFT, deltaTime, activeItems, lightRange, currentFrame);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        camera.ProcessKeyboard(RIGHT, deltaTime, activeItems, lightRange, currentFrame);
 }
 
 // glfw: whenever the mouse moves, this callback is called
@@ -456,3 +590,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
+
+
+

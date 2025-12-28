@@ -3,8 +3,11 @@
 
 enum class ItemType {
     KEY,
-    BATTERY
+    BATTERY,
+    TRAP,
+    EXIT
 };
+
 
 class Item {
 public:
@@ -15,4 +18,6 @@ public:
     Item(glm::vec3 pos, ItemType t)
         : position(pos), type(t), collected(false) {
     }
+    
+
 };
