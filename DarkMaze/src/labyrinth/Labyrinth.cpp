@@ -14,7 +14,7 @@ bool Labyrinth::isValid(int r, int c) {
     return r >= 0 && r < ROWS && c >= 0 && c < COLS;
 }
 
-void Labyrinth::generateMaze() {
+void Labyrinth::generateMaze(std::vector<Item>& activeItems) {
     srand((unsigned)time(0));
 
     auto randCellIndex = [&](int maxSize) -> int {
@@ -62,11 +62,59 @@ void Labyrinth::generateMaze() {
 
     int entranceRow = startR;
     int exitRow = endR;
-    maze[entranceRow][0] = 0;
-    maze[entranceRow][1] = 0;
+    //maze[entranceRow][0] = 0;
+    //maze[entranceRow][1] = 0;
     maze[exitRow][COLS - 1] = 0;
     maze[exitRow][COLS - 2] = 0;
+
+    // 1. Znajdź wszystkie wolne komórki (korytarze)
+    std::vector<std::pair<int, int>> freeCells;
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            if (maze[i][j] == 0) {
+                // Nie stawiaj przedmiotów dokładnie na wejściu (0, entranceRow)
+                if (j > 1 && j < COLS - 2) {
+                    freeCells.push_back({ i, j });
+                }
+            }
+        }
+    }
+
+    // 2. Potasuj wolne komórki, żeby przedmioty były w losowych miejscach
+    for (int i = 0; i < freeCells.size(); ++i) {
+        int r = rand() % freeCells.size();
+        std::swap(freeCells[i], freeCells[r]);
+    }
+
+    // 3. Wyczyść stare przedmioty (opcjonalnie) i dodaj nowe
+    activeItems.clear();
+    int cellIdx = 0;
+
+    // Dodaj 3 KLUCZE
+    for (int i = 0; i < 3 && cellIdx < freeCells.size(); ++i) {
+        activeItems.push_back(Item(glm::vec3(freeCells[cellIdx].second, 0.5f, freeCells[cellIdx].first), ItemType::KEY));
+        cellIdx++;
+    }
+
+    // Dodaj 5 BATERII
+    for (int i = 0; i < 5 && cellIdx < freeCells.size(); ++i) {
+        activeItems.push_back(Item(glm::vec3(freeCells[cellIdx].second, 0.5f, freeCells[cellIdx].first), ItemType::BATTERY));
+        cellIdx++;
+    }
+
+    // Dodaj 2 PUŁAPKI
+    for (int i = 0; i < 2 && cellIdx < freeCells.size(); ++i) {
+        activeItems.push_back(Item(glm::vec3(freeCells[cellIdx].second, 0.5f, freeCells[cellIdx].first), ItemType::TRAP));
+        cellIdx++;
+    }
+
+    // 4. WYJŚCIE (zgodnie z logiką labiryntu na samym końcu po prawej)
+    // Wyjście jest tam, gdzie wstawiłeś maze[exitRow][COLS-1] = 0
+    activeItems.push_back(Item(glm::vec3(COLS - 1 +0.5f, 0.5f, exitRow),ItemType::EXIT));
+
+    //activeItems.back().collected = true; // Zablokowane na start
 }
+
 
 //Rysowanie labiryntu + podłogi + sufitu
 void Labyrinth::drawLabyrinth(Shader& shader, unsigned int cubeVAO) {

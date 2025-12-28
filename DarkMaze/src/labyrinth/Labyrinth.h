@@ -3,6 +3,7 @@
 #include <gtc/matrix_transform.hpp>
 #include <vector>
 #include "../lighting/Shader.h"
+#include "../../Item.h"
 
 class Labyrinth {
 public:
@@ -13,7 +14,7 @@ public:
 
     Labyrinth();
 
-    void generateMaze();
+    void generateMaze(std::vector<Item>& activeItems);
     void drawLabyrinth(Shader& shader, unsigned int cubeVAO);
 
 
