@@ -9,9 +9,6 @@ uniform mat4 projection; // rzutowanie 3D na 2D
 
 out vec3 FragPos; //pozycja wierzchołka po transformacji modelem
 out vec3 Normal; //normalna wierzchołka
-
-
-
 out vec2 TexCoords;
 
 void main() {

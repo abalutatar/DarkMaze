@@ -2,6 +2,7 @@
 .vs/
 *.suo
 *.user
+*.vcxproj
 *.userosscache
 
 # Compiled data

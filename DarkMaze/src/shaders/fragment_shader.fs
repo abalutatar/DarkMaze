@@ -10,6 +10,10 @@ uniform vec3 viewPos;
 uniform vec3 lightColor;
 uniform vec3 objectColor;
 
+//texture
+uniform sampler2D wallTexture;
+uniform bool useTexture;
+
 // attenuation params
 uniform float constant;
 uniform float linear;
@@ -29,6 +33,11 @@ uniform float fogFar;    // dystans, przy którym jest pe³na mg³a
 uniform float lightIntensity;
 
 void main() {
+    vec3 baseColor = objectColor;
+
+    if (useTexture) {
+        baseColor = texture(wallTexture, TexCoords).rgb;
+    }
     // dystans od œwiat³a
     float dist2 = dot(lightPos - FragPos, lightPos - FragPos);
     float cutoff2 = cutoff * cutoff;
@@ -61,12 +70,12 @@ void main() {
     float attenuation = 1.0 / (constant + linear * distanceToLight + quadratic * (distanceToLight * distanceToLight));
 
     // intensywnoœæ wp³ywa na ca³e oœwietlenie
-    vec3 lighting = (ambient * objectColor + diffuse * objectColor * attenuation + specular * attenuation) * lightIntensity;
+    vec3 lighting = (ambient * baseColor + diffuse * baseColor * attenuation + specular * attenuation) * lightIntensity;
 
     // miêkki cutoff latarki
     if (softCutoff > 0.0) {
         float edgeStart = max(0.0, cutoff - softCutoff);
-        float factor = smoothstep(edgeStart, cutoff, distanceToLight);
+        float factor = 1.0 - smoothstep(edgeStart, cutoff, distanceToLight);
         lighting *= factor;
     }
 

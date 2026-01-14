@@ -39,7 +39,7 @@
     <ClCompile Include="src\labyrinth\Labyrinth.cpp">
       <Filter>Pliki źródłowe\labyrinth</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\Libs\GLAD\src\glad.c">
+    <ClCompile Include="src\glad.c">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,6 +56,12 @@
     <ClInclude Include="src\labyrinth\Labyrinth.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
+    <ClInclude Include="Item.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="src\stb_image.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fragment_shader.fs">
@@ -64,5 +70,16 @@
     <None Include="src\shaders\vertex_shader.vs">
       <Filter>Pliki źródłowe\shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="src\textures\ceiling.png">
+      <Filter>Pliki zasobów</Filter>
+    </Image>
+    <Image Include="src\textures\wall.png">
+      <Filter>Pliki zasobów</Filter>
+    </Image>
+    <Image Include="src\textures\ground.png">
+      <Filter>Pliki zasobów</Filter>
+    </Image>
   </ItemGroup>
 </Project>

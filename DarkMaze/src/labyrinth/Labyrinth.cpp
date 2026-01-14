@@ -4,6 +4,9 @@
 #include <ctime>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../stb_image.h"
+
 Labyrinth::Labyrinth() {
     for (int i = 0; i < ROWS; i++)
         for (int j = 0; j < COLS; j++)
@@ -122,38 +125,54 @@ void Labyrinth::drawLabyrinth(Shader& shader, unsigned int cubeVAO) {
 
     float cellSize = 1.0f;
 
-    // 1) Rysuj jedną dużą, cienką płytę jako podłogę
-    {
-        float width = COLS * cellSize;
-        float depth = ROWS * cellSize;
-        glm::mat4 model = glm::mat4(1.0f);
-        // ustaw środek podłogi w środku siatki i nieco poniżej y=0 aby góra kostki leżała na y=0
-        model = glm::translate(model, glm::vec3((COLS - 1) * cellSize * 0.5f, -0.01f, (ROWS - 1) * cellSize * 0.5f));
-        model = glm::scale(model, glm::vec3(width, 0.02f, depth)); // bardzo cienka w osi Y
-        shader.setMat4("model", model);
+    //Załaduj teksture
+    shader.setBool("useTexture", true);
+    unsigned int groundTex = loadTexture("src/textures/ground.png");
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, groundTex);
+    // Rysuj podloge
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            if (maze[i][j] == 0) {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(j * cellSize, -0.5f, i * cellSize));
+                model = glm::scale(model, glm::vec3(cellSize, 1.0f, cellSize));
+                shader.setMat4("model", model);
 
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
+                glBindVertexArray(cubeVAO);
+                glDrawArrays(GL_TRIANGLES, 30, 6);
+                glBindVertexArray(0);
+            }
+        }
     }
 
-    // 2) Rysuj sufit jako cienką płytę nad ścianami
-    {
-        float width = COLS * cellSize;
-        float depth = ROWS * cellSize;
-        // Ściany mają środek y = 0.5 i wysokość 1.0 => ich góra jest na y = 1.0.
-        // Umieść środek sufitu nieco powyżej y=1.0, żeby uniknąć z-fightingu.
-        float ceilingCenterY = 1.01f;
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3((COLS - 1) * cellSize * 0.5f, ceilingCenterY, (ROWS - 1) * cellSize * 0.5f));
-        model = glm::scale(model, glm::vec3(width, 0.02f, depth)); // bardzo cienka
-        shader.setMat4("model", model);
+    //Załaduj teksture
+    shader.setBool("useTexture", true);
+    unsigned int ceilingTex = loadTexture("src/textures/ceiling.png");
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, ceilingTex);
+    // 2) Rysuj sufit 
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            if (maze[i][j] == 0) {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(j * cellSize, 1.5f, i * cellSize));
+                model = glm::scale(model, glm::vec3(cellSize, 1.0f, cellSize));
+                shader.setMat4("model", model);
 
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
+                glBindVertexArray(cubeVAO);
+                glDrawArrays(GL_TRIANGLES, 24, 6);
+                glBindVertexArray(0);
+            }
+        }
     }
 
+    //Załaduj teksture
+    shader.setBool("useTexture", true);
+    unsigned int wallTex = loadTexture("src/textures/wall.png");
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, wallTex);
+    shader.setInt("wallTexture", 0);
     // 3) Rysuj ściany (tak jak wcześniej)
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
@@ -168,4 +187,33 @@ void Labyrinth::drawLabyrinth(Shader& shader, unsigned int cubeVAO) {
             }
         }
     }
+    shader.setBool("useTexture", false);
+}
+
+unsigned int Labyrinth::loadTexture(const char* path) {
+    unsigned int tex;
+    glGenTextures(1, &tex);
+
+    int w, h, channels;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char* data = stbi_load(path, &w, &h, &channels, 0);
+
+    if (data) {
+        GLenum format = (channels == 3) ? GL_RGB : GL_RGBA;
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else {
+        std::cout << "FAILED TO LOAD TEXTURE: " << path << std::endl;
+    }
+
+
+    stbi_image_free(data);
+    return tex;
 }
