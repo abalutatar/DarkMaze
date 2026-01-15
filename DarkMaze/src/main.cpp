@@ -9,6 +9,9 @@
 #include "../Camera.h"
 #include "../Item.h"
 #include <vector>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "../tiny_obj_loader.h"
+
 
 std::vector<Item> activeItems;
 //HUDState hud;
@@ -186,6 +189,99 @@ unsigned int createCylinderVAO(int segments = 24) {
     return VAO;
 }
 
+//unsigned int createKeyVAO() {
+    struct Mesh {
+        unsigned int VAO, VBO, EBO;
+        int indexCount;
+    };
+
+//}
+
+Mesh loadOBJ(const std::string& path) {
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    bool ok = tinyobj::LoadObj(
+        &attrib,
+        &shapes,
+        &materials,
+        &err,
+        path.c_str(),     // путь к OBJ
+        "models/",            // папка с .mtl
+        true                  // triangulate
+    );
+
+    if (!warn.empty()) std::cout << "WARN: " << warn << std::endl;
+    if (!err.empty())  std::cerr << "ERR: " << err << std::endl;
+    if (!ok) throw std::runtime_error("Failed to load OBJ");
+
+    std::vector<float> vertices;
+    std::vector<unsigned int> indices;
+
+    for (const auto& shape : shapes) {
+        for (const auto& idx : shape.mesh.indices) {
+            // position
+            vertices.push_back(attrib.vertices[3 * idx.vertex_index + 0]);
+            vertices.push_back(attrib.vertices[3 * idx.vertex_index + 1]);
+            vertices.push_back(attrib.vertices[3 * idx.vertex_index + 2]);
+
+            // normal (если есть)
+            if (idx.normal_index >= 0) {
+                vertices.push_back(attrib.normals[3 * idx.normal_index + 0]);
+                vertices.push_back(attrib.normals[3 * idx.normal_index + 1]);
+                vertices.push_back(attrib.normals[3 * idx.normal_index + 2]);
+            }
+            else {
+                vertices.insert(vertices.end(), { 0.0f, 1.0f, 0.0f });
+            }
+
+            // texcoord (если есть)
+            if (idx.texcoord_index >= 0) {
+                vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 0]);
+                vertices.push_back(attrib.texcoords[2 * idx.texcoord_index + 1]);
+            }
+            else {
+                vertices.insert(vertices.end(), { 0.0f, 0.0f });
+            }
+
+            indices.push_back(indices.size());
+        }
+    }
+
+    Mesh mesh;
+    mesh.indexCount = indices.size();
+
+    glGenVertexArrays(1, &mesh.VAO);
+    glGenBuffers(1, &mesh.VBO);
+    glGenBuffers(1, &mesh.EBO);
+
+    glBindVertexArray(mesh.VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    int stride = 8 * sizeof(float);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+
+    return mesh;
+}
+
+
 // settings
 //const unsigned int SCR_WIDTH = 800;
 //const unsigned int SCR_HEIGHT = 600;
@@ -240,6 +336,7 @@ int main() {
     int cylinderVertexCount = 24 * 6   // bok: na każdy segment 2 trójkąty = 6 wierzchołków
         + 24 * 3 // pokrywa górna: 1 trójkąt na segment
         + 24 * 3; // pokrywa dolna
+    Mesh keyModel = loadOBJ("src/models/key_polygons.obj");
 
 
     // generowanie labiryntu
@@ -390,14 +487,13 @@ int main() {
                 model = glm::translate(model, item.position);
 
                 if (item.type == ItemType::KEY) {
-                    // kolor klucza (np. granatowy)
-                    shader.setVec3("objectColor", glm::vec3(0.1f, 0.1f, 0.6f));
-                    // mniejszy sześcian
-                    model = glm::scale(model, glm::vec3(0.2f));
+                    model = glm::scale(model, glm::vec3(0.1f));
+                    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1, 0, 0));
+                    shader.setVec3("objectColor", glm::vec3(0.941f, 0.925f, 0.141f)); // синий ключ
                     shader.setMat4("model", model);
 
-                    glBindVertexArray(cubeVAO);
-                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                    glBindVertexArray(keyModel.VAO);
+                    glDrawElements(GL_TRIANGLES, keyModel.indexCount, GL_UNSIGNED_INT, 0);
                     glBindVertexArray(0);
                 }
                 else if (item.type == ItemType::BATTERY) {
