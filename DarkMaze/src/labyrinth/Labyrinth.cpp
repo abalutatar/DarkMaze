@@ -4,8 +4,6 @@
 #include <ctime>
 #include <iostream>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "../stb_image.h"
 
 Labyrinth::Labyrinth() {
     for (int i = 0; i < ROWS; i++)
@@ -127,7 +125,7 @@ void Labyrinth::drawLabyrinth(Shader& shader, unsigned int cubeVAO) {
 
     //Załaduj teksture
     shader.setBool("useTexture", true);
-    unsigned int groundTex = loadTexture("src/textures/ground.png");
+    unsigned int groundTex = shader.loadTexture("src/textures/ground.png");
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, groundTex);
     // Rysuj podloge
@@ -148,7 +146,7 @@ void Labyrinth::drawLabyrinth(Shader& shader, unsigned int cubeVAO) {
 
     //Załaduj teksture
     shader.setBool("useTexture", true);
-    unsigned int ceilingTex = loadTexture("src/textures/ceiling.png");
+    unsigned int ceilingTex = shader.loadTexture("src/textures/ceiling.png");
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, ceilingTex);
     // 2) Rysuj sufit 
@@ -169,7 +167,7 @@ void Labyrinth::drawLabyrinth(Shader& shader, unsigned int cubeVAO) {
 
     //Załaduj teksture
     shader.setBool("useTexture", true);
-    unsigned int wallTex = loadTexture("src/textures/wall.png");
+    unsigned int wallTex = shader.loadTexture("src/textures/wall.png");
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, wallTex);
     shader.setInt("wallTexture", 0);
@@ -190,30 +188,4 @@ void Labyrinth::drawLabyrinth(Shader& shader, unsigned int cubeVAO) {
     shader.setBool("useTexture", false);
 }
 
-unsigned int Labyrinth::loadTexture(const char* path) {
-    unsigned int tex;
-    glGenTextures(1, &tex);
 
-    int w, h, channels;
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load(path, &w, &h, &channels, 0);
-
-    if (data) {
-        GLenum format = (channels == 3) ? GL_RGB : GL_RGBA;
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    else {
-        std::cout << "FAILED TO LOAD TEXTURE: " << path << std::endl;
-    }
-
-
-    stbi_image_free(data);
-    return tex;
-}

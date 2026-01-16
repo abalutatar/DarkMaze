@@ -16,7 +16,6 @@ public:
 
     void generateMaze(std::vector<Item>& activeItems);
     void drawLabyrinth(Shader& shader, unsigned int cubeVAO);
-    unsigned int loadTexture(const char* path);
 
 private:
     bool isValid(int r, int c);

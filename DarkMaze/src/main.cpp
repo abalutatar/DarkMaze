@@ -189,13 +189,11 @@ unsigned int createCylinderVAO(int segments = 24) {
     return VAO;
 }
 
-//unsigned int createKeyVAO() {
-    struct Mesh {
-        unsigned int VAO, VBO, EBO;
-        int indexCount;
-    };
+struct Mesh {
+    unsigned int VAO, VBO, EBO;
+    int indexCount;
+};
 
-//}
 
 Mesh loadOBJ(const std::string& path) {
     tinyobj::attrib_t attrib;
@@ -209,7 +207,7 @@ Mesh loadOBJ(const std::string& path) {
         &materials,
         &err,
         path.c_str(),     // путь к OBJ
-        "models/",            // папка с .mtl
+        "src/models/",            // папка с .mtl
         true                  // triangulate
     );
 
@@ -283,8 +281,6 @@ Mesh loadOBJ(const std::string& path) {
 
 
 // settings
-//const unsigned int SCR_WIDTH = 800;
-//const unsigned int SCR_HEIGHT = 600;
 
 // camera
 Camera camera(glm::vec3(1.0f, 0.7f, 1.0f));
@@ -325,43 +321,17 @@ int main() {
     Shader shader("src/shaders/vertex_shader.vs", "src/shaders/fragment_shader.fs");
     // shader dla wizualnej "latarki"
     Shader lampShader("src/shaders/lamp_vertex.vs", "src/shaders/lamp_fragment.fs");
-   /* Shader hudShader(
-        "src/shaders/hud_vertex.vs",
-        "src/shaders/hud_fragment.fs"
-    );
-    */
-    // przygotowanie VAO sześcianu
+    // przygotowanie materialów
     unsigned int cubeVAO = createCubeVAO();
-    unsigned int cylinderVAO = createCylinderVAO(24);
-    int cylinderVertexCount = 24 * 6   // bok: na każdy segment 2 trójkąty = 6 wierzchołków
-        + 24 * 3 // pokrywa górna: 1 trójkąt na segment
-        + 24 * 3; // pokrywa dolna
-    Mesh keyModel = loadOBJ("src/models/key_polygons.obj");
-
+    Mesh keyModel = loadOBJ("src/models/key_2.obj");
+    unsigned int keyTex = shader.loadTexture("src/textures/key_2.png");
+    Mesh batteryModel = loadOBJ("src/models/9V_Battery_Varta.obj");
+    unsigned int batteryTex = shader.loadTexture("src/textures/9V_Battery_Varta_diffuse.png");
+    unsigned int doorTex = shader.loadTexture("src/textures/door.png");
 
     // generowanie labiryntu
     labyrinth.generateMaze(activeItems); // Przekazujemy wektor do uzupełnienia
     camera.maze = labyrinth.maze;
-    /*
-    // przykładowe obiekty w labiryncie
-    activeItems.push_back(Item(glm::vec3(2.0f, 0.5f, 3.0f), ItemType::KEY));
-    activeItems.push_back(Item(glm::vec3(6.0f, 0.5f, 2.0f), ItemType::KEY));
-    activeItems.push_back(Item(glm::vec3(8.0f, 0.5f, 7.0f), ItemType::KEY));
-
-    activeItems.push_back(Item(glm::vec3(3.0f, 0.5f, 5.0f), ItemType::BATTERY));
-    activeItems.push_back(Item(glm::vec3(7.0f, 0.5f, 4.0f), ItemType::BATTERY));
-    activeItems.push_back(Item(glm::vec3(5.0f, 0.5f, 8.0f), ItemType::BATTERY));
-    activeItems.push_back(Item(glm::vec3(9.0f, 0.5f, 3.0f), ItemType::BATTERY));
-    activeItems.push_back(Item(glm::vec3(10.0f, 0.5f, 6.0f), ItemType::BATTERY));
-    // przykładowe pułapki
-    activeItems.push_back(Item(glm::vec3(4.0f, 0.5f, 4.0f), ItemType::TRAP));
-    activeItems.push_back(Item(glm::vec3(6.0f, 0.5f, 6.0f), ItemType::TRAP));
-
-    // wyjście – początkowo zablokowane
-    activeItems.push_back(Item(glm::vec3(10.0f, 0.5f, 10.0f), ItemType::EXIT));
-    activeItems.back().collected = true; // zablokowane do czasu zebrania kluczy
-
-    */
 
 
     shader.use();
@@ -466,20 +436,6 @@ int main() {
         shader.setFloat("softCutoff", 1.5f); // Dodaj miękką krawędź (bardzo ważne dla smoothstep!)
         shader.setFloat("fogFar", lightRange + 1.0f);
         labyrinth.drawLabyrinth(shader, cubeVAO);
-        /*
-        updateHUD(hud, camera, camera.keysCollected, lightRange);
-
-        drawHUD(
-            hudShader,
-            cubeVAO,
-            hud,
-            SCR_WIDTH,
-            SCR_HEIGHT
-        );
-        */
-        // mini-mapa w prawym dolnym rogu
-        //renderMiniMap(shader, labyrinth, activeItems, camera, cubeVAO);
-
 
         for (auto& item : activeItems) {
             if (!item.collected) {
@@ -487,25 +443,34 @@ int main() {
                 model = glm::translate(model, item.position);
 
                 if (item.type == ItemType::KEY) {
-                    model = glm::scale(model, glm::vec3(0.1f));
-                    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1, 0, 0));
-                    shader.setVec3("objectColor", glm::vec3(0.941f, 0.925f, 0.141f)); // синий ключ
+                    //model = glm::translate(model, glm::vec3(0.0f, -0.2f, 0.0f));
+                    model = glm::scale(model, glm::vec3(0.2f));
+                    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(0, 0, 1));
+                    shader.setVec3("objectColor", glm::vec3(0.941f, 0.925f, 0.141f));
                     shader.setMat4("model", model);
 
+                    shader.setBool("useTexture", true);
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, keyTex);
                     glBindVertexArray(keyModel.VAO);
                     glDrawElements(GL_TRIANGLES, keyModel.indexCount, GL_UNSIGNED_INT, 0);
                     glBindVertexArray(0);
+                    shader.setBool("useTexture", false);
                 }
                 else if (item.type == ItemType::BATTERY) {
-                    // kolor baterii (np. czerwony)
-                    shader.setVec3("objectColor", glm::vec3(0.8f, 0.1f, 0.1f));
-                    // walec – smuklejszy i wyższy
-                    model = glm::scale(model, glm::vec3(0.2f, 0.5f, 0.2f));
+                    model = glm::translate(model, glm::vec3(0.0f, -0.2f, 0.0f));
+                    model = glm::scale(model, glm::vec3(3.0f));
+                    //model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1, 0, 0));
+                    shader.setVec3("objectColor", glm::vec3(0.941f, 0.925f, 0.141f));
                     shader.setMat4("model", model);
 
-                    glBindVertexArray(cylinderVAO);
-                    glDrawArrays(GL_TRIANGLES, 0, cylinderVertexCount);
+                    shader.setBool("useTexture", true);
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, batteryTex);
+                    glBindVertexArray(batteryModel.VAO);
+                    glDrawElements(GL_TRIANGLES, batteryModel.indexCount, GL_UNSIGNED_INT, 0);
                     glBindVertexArray(0);
+                    shader.setBool("useTexture", false);
                 }
                 // main.cpp -> fragment rysujący TRAP
                 // main.cpp -> fragment rysujący TRAP
@@ -537,11 +502,15 @@ int main() {
                 else if (item.type == ItemType::EXIT) {
                     shader.setVec3("objectColor", glm::vec3(0.0f, 1.0f, 0.0f)); // zielony
 
-                    model = glm::scale(model, glm::vec3(0.2f, 2.0f, 1.0f)); // drzwi
+                    model = glm::scale(model, glm::vec3(0.2f, 1.0f, 1.0f)); // drzwi
                     shader.setMat4("model", model);
 
+                    shader.setBool("useTexture", true);
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, doorTex);
                     glBindVertexArray(cubeVAO);
                     glDrawArrays(GL_TRIANGLES, 0, 36);
+                    shader.setBool("useTexture", true);
                 }
 
             }

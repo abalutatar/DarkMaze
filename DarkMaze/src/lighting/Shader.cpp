@@ -3,6 +3,9 @@
 #include <sstream>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../stb_image.h"
+
 Shader::Shader(const char* vertexPath, const char* fragmentPath) {
     ID = 0; // zabezpieczenie na wypadek błędu
     
@@ -126,3 +129,30 @@ void Shader::checkCompileErrors(GLuint shader, std::string type)
     }
 }
 
+unsigned int Shader::loadTexture(const char* path) {
+    unsigned int tex;
+    glGenTextures(1, &tex);
+
+    int w, h, channels;
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char* data = stbi_load(path, &w, &h, &channels, 0);
+
+    if (data) {
+        GLenum format = (channels == 3) ? GL_RGB : GL_RGBA;
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else {
+        std::cout << "FAILED TO LOAD TEXTURE: " << path << std::endl;
+    }
+
+
+    stbi_image_free(data);
+    return tex;
+}

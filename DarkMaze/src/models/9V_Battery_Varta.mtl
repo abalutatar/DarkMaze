@@ -1,0 +1,16 @@
+# Blender MTL File: '9V_Battery.blend'
+# Material Count: 1
+
+newmtl Mat_Varta
+Ns 62.500000
+Ka 1.000000 1.000000 1.000000
+Kd 0.159220 0.159220 0.159220
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Bump src/models/9V_Battery_normal.png
+map_Kd src/models/9V_Battery_Varta_diffuse.png
+map_Ns src/models/9V_Battery_roughness.png
+refl src/models/9V_Battery_metalness.png
