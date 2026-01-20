@@ -352,7 +352,7 @@ int main() {
     float att_linear = 0.7f;
     float att_quadratic = 0.017f;
 
-    float lightIntensity = 1.0f; // 0.0–1.0
+    float lightIntensity = 0.7f; // 0.0–1.0
     float lightRange = 1.0f;// 4.0f;     // zasięg latarki
     
 
@@ -383,7 +383,13 @@ int main() {
         else {
             // Logika po przegranej: możesz np. zmienić kolor światła na czerwony
             lightIntensity = glm::max(0.0f, lightIntensity - 2.0f * deltaTime);
-            shader.use();
+            if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+                labyrinth.clearMaze();
+                labyrinth.generateMaze(activeItems);
+                camera = Camera(glm::vec3(1.0f, 0.7f, 1.0f));
+                camera.maze = labyrinth.maze;
+                lightIntensity = 0.7f;
+            }
             shader.setFloat("lightIntensity", lightIntensity);
         }
         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
@@ -516,57 +522,6 @@ int main() {
             }
         }
 
-/*
-        for (auto& item : activeItems) {
-            if (!item.collected) {
-                float dist = glm::distance(camera.Position, item.position);
-                if (dist < 0.5f) { // próg kolizji
-                    item.collected = true;
-                    if (item.type == ItemType::KEY) {
-                        std::cout << "Zebrano klucz!\n";
-                    }
-                    else if (item.type == ItemType::BATTERY) {
-                        std::cout << "Zebrano baterię!\n";
-                        lightRange += 2.0f; // np. zwiększ zasięg latarki
-                    }
-                }
-            }
-        }*/
-        /*     
-
-        for (auto& item : activeItems) {
-            if (!item.collected) {
-                float dist = glm::distance(camera.Position, item.position);
-                if (dist < 0.5f) {
-                    if (item.type == ItemType::KEY) {
-                        item.collected = true;
-                        keysCollected++;
-                        std::cout << "Zebrano klucz! (" << keysCollected << "/3)\n";
-                    }
-                    else if (item.type == ItemType::BATTERY) {
-                        item.collected = true;
-                        // Logika kumulacji czasu (2 minuty = 120s)
-                        if (lightEffectEndTime > currentFrame) {
-                            lightEffectEndTime += 45.0f;
-                        }
-                        else {
-                            lightEffectEndTime = currentFrame + 45.0f;
-                        }
-                    }
-                    else if (item.type == ItemType::TRAP && !item.collected) {
-                        std::cout << "Pułapka! Straciłeś życie lub zatrzymano ruch.\n";
-                        // np. cofnięcie gracza
-                        camera.Position -= camera.Front * 0.5f;
-                        item.collected = true;
-                    }
-                    else if (item.type == ItemType::EXIT && !item.collected) {
-                        std::cout << "Gratulacje! Ukończyłeś poziom!\n";
-                        glfwSetWindowShouldClose(window, true);
-                    }
-                }
-            }
-        }
-         */
         // Odblokowanie wyjścia po zebraniu 3 kluczy
         if (camera.keysCollected >= 3) {
             for (auto& item : activeItems) {
@@ -576,24 +531,6 @@ int main() {
                 }
             }
         }
-
-
-        // --- usuń lub zakomentuj ten blok jeśli nie chcesz widocznej kostki ---
-/*
-        // narysuj małą kostkę reprezentującą latarkę
-        lampShader.use();
-        lampShader.setMat4("projection", projection);
-        lampShader.setMat4("view", view);
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.1f)); // mała
-        lampShader.setMat4("model", model);
-        lampShader.setVec3("lightColor", lightColor);
-
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        */
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -14,6 +14,7 @@ public:
 
     Labyrinth();
 
+    void clearMaze();
     void generateMaze(std::vector<Item>& activeItems);
     void drawLabyrinth(Shader& shader, unsigned int cubeVAO);
 

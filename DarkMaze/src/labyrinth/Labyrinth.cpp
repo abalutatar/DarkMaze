@@ -11,6 +11,12 @@ Labyrinth::Labyrinth() {
             maze[i][j] = 1;
 }
 
+void Labyrinth::clearMaze() {
+    for (int i = 0; i < ROWS; ++i)
+        for (int j = 0; j < COLS; ++j)
+            maze[i][j] = 1; // всё стены
+}
+
 bool Labyrinth::isValid(int r, int c) {
     return r >= 0 && r < ROWS && c >= 0 && c < COLS;
 }

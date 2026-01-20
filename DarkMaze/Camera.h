@@ -138,9 +138,9 @@ public:
 
                         // Jeśli bonus już trwa, dodajemy czas. Jeśli nie, liczymy od teraz.
                         if (lightEffectEndTime > currentTime)
-                            lightEffectEndTime += 45.0f;
+                            lightEffectEndTime += 10.0f;
                         else
-                            lightEffectEndTime = currentTime + 45.0f;
+                            lightEffectEndTime = currentTime + 10.0f;
                     }
                     else if (item.type == ItemType::KEY && !item.collected) {
                         item.collected = true;
