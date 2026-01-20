@@ -47,6 +47,7 @@ public:
     float boostedLightRange = 10.0f;  // Zasięg po baterii
     float lightEffectEndTime = 0.0f;  // Czas wygaśnięcia bonusu
     bool isGameOver = false; // Dodaj to w sekcji public:
+    bool levelCompleted = false;
     int (*maze)[Labyrinth::COLS];
 
     // constructor with vectors
@@ -194,6 +195,7 @@ public:
                                 std::cout << "Drzwi sie otwieraja...\n";
                                 std::cout << "Zwyciestwo!\n";
                                 item.collected = true;  
+                                levelCompleted = true;
                                 isGameOver = true; // albo osobna flaga WIN
                                 lightEffectEndTime = currentFrame + 9999.0f;
 
@@ -259,7 +261,16 @@ public:
 
             if (cubeCollision(doorMax, doorMin, pos))
                 return true;
+
+            // KOLIZJA Z ZAPADNIĄ
+            if (item.type == ItemType::TRAP) {
+                isGameOver = true;
+                levelCompleted = false;
+                std::cout << "Wpadłeś w pułapkę! Przegrana.\n";
+            }
+
         }
+
 
         return false;
     }

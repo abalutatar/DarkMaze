@@ -108,6 +108,41 @@ unsigned int createCubeVAO() {
     return VAO;
 }
 
+
+unsigned int createQuadVAO() {
+    float quadVertices[] = {
+        // pos      // tex
+        -0.5f, -0.5f, 0.0f, 0.0f,
+         0.5f, -0.5f, 1.0f, 0.0f,
+         0.5f,  0.5f, 1.0f, 1.0f,
+
+        -0.5f, -0.5f, 0.0f, 0.0f,
+         0.5f,  0.5f, 1.0f, 1.0f,
+        -0.5f,  0.5f, 0.0f, 1.0f
+    };
+
+    unsigned int VAO, VBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+    // pozycja → location 0 (2D)
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // texcoord → location 2
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+    return VAO;
+}
+
+
+
 unsigned int createCylinderVAO(int segments = 24) {
     std::vector<float> vertices;
     const float radius = 0.5f;
@@ -206,9 +241,9 @@ Mesh loadOBJ(const std::string& path) {
         &shapes,
         &materials,
         &err,
-        path.c_str(),     // путь к OBJ
-        "src/models/",            // папка с .mtl
-        true                  // triangulate
+        path.c_str(),     
+        "src/models/",            
+        true                  
     );
 
     if (!warn.empty()) std::cout << "WARN: " << warn << std::endl;
@@ -291,6 +326,19 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
+// SYSTEM POZIOMÓW I CZASU
+enum class GameState {
+    PLAYING,
+    LEVEL_COMPLETE,
+    GAME_OVER_LOSE,
+    GAME_OVER_WIN
+};
+
+GameState gameState = GameState::PLAYING;
+int currentLevel = 1;
+float levelDurations[3] = { 180.0f, 120.0f, 60.0f }; // 3 min, 2 min, 1 min
+float timeRemaining = levelDurations[0];
+
 
 int main() {
     // Konfiguracja
@@ -323,11 +371,17 @@ int main() {
     Shader lampShader("src/shaders/lamp_vertex.vs", "src/shaders/lamp_fragment.fs");
     // przygotowanie materialów
     unsigned int cubeVAO = createCubeVAO();
+    unsigned int quadVAO = createQuadVAO();
+
     Mesh keyModel = loadOBJ("src/models/key_2.obj");
     unsigned int keyTex = shader.loadTexture("src/textures/key_2.png");
     Mesh batteryModel = loadOBJ("src/models/9V_Battery_Varta.obj");
     unsigned int batteryTex = shader.loadTexture("src/textures/9V_Battery_Varta_diffuse.png");
     unsigned int doorTex = shader.loadTexture("src/textures/door.png");
+    // tekstury ekranów końcowych
+    unsigned int gameOverTex = shader.loadTexture("src/textures/game_over.png");
+    unsigned int levelCompleteTex = shader.loadTexture("src/textures/level_complete.png");
+
 
     // generowanie labiryntu
     labyrinth.generateMaze(activeItems); // Przekazujemy wektor do uzupełnienia
@@ -364,6 +418,23 @@ int main() {
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        // TIMER POZIOMÓW
+        if (!camera.levelCompleted && !camera.isGameOver) {
+        if (gameState == GameState::PLAYING) {
+            timeRemaining -= deltaTime;
+            if (timeRemaining <= 0.0f) {
+                timeRemaining = 0.0f;
+                gameState = GameState::GAME_OVER_LOSE;
+                camera.isGameOver = true;
+                // UKOŃCZENIE POZIOMU
+                if (!camera.isGameOver && camera.keysCollected >= 3) {
+                    camera.levelCompleted = true;
+                }
+                std::cout << "Czas sie skonczyl! Przegrana.\n";
+            }
+        }
+        }
+
         if (currentFrame < camera.lightEffectEndTime) {
             // Bonus trwa
             lightRange = camera.boostedLightRange;
@@ -473,7 +544,7 @@ int main() {
                     shader.setBool("useTexture", false);
                 }
                 // main.cpp -> fragment rysujący TRAP
-                // main.cpp -> fragment rysujący TRAP
+
                 else if (item.type == ItemType::TRAP) {
                     shader.setVec3("objectColor", glm::vec3(0.1f, 0.4f, 0.1f));
 
@@ -516,57 +587,22 @@ int main() {
             }
         }
 
-/*
-        for (auto& item : activeItems) {
-            if (!item.collected) {
-                float dist = glm::distance(camera.Position, item.position);
-                if (dist < 0.5f) { // próg kolizji
-                    item.collected = true;
-                    if (item.type == ItemType::KEY) {
-                        std::cout << "Zebrano klucz!\n";
-                    }
-                    else if (item.type == ItemType::BATTERY) {
-                        std::cout << "Zebrano baterię!\n";
-                        lightRange += 2.0f; // np. zwiększ zasięg latarki
-                    }
-                }
+        // OBSŁUGA UKOŃCZENIA POZIOMU
+        if (gameState == GameState::PLAYING && camera.levelCompleted) {
+            if (currentLevel < 3) {
+                gameState = GameState::LEVEL_COMPLETE;
+                camera.isGameOver = true;
+                std::cout << "Poziom " << currentLevel << " ukończony!\n";
             }
-        }*/
-        /*     
-
-        for (auto& item : activeItems) {
-            if (!item.collected) {
-                float dist = glm::distance(camera.Position, item.position);
-                if (dist < 0.5f) {
-                    if (item.type == ItemType::KEY) {
-                        item.collected = true;
-                        keysCollected++;
-                        std::cout << "Zebrano klucz! (" << keysCollected << "/3)\n";
-                    }
-                    else if (item.type == ItemType::BATTERY) {
-                        item.collected = true;
-                        // Logika kumulacji czasu (2 minuty = 120s)
-                        if (lightEffectEndTime > currentFrame) {
-                            lightEffectEndTime += 45.0f;
-                        }
-                        else {
-                            lightEffectEndTime = currentFrame + 45.0f;
-                        }
-                    }
-                    else if (item.type == ItemType::TRAP && !item.collected) {
-                        std::cout << "Pułapka! Straciłeś życie lub zatrzymano ruch.\n";
-                        // np. cofnięcie gracza
-                        camera.Position -= camera.Front * 0.5f;
-                        item.collected = true;
-                    }
-                    else if (item.type == ItemType::EXIT && !item.collected) {
-                        std::cout << "Gratulacje! Ukończyłeś poziom!\n";
-                        glfwSetWindowShouldClose(window, true);
-                    }
-                }
+            else {
+                gameState = GameState::GAME_OVER_WIN;
+                camera.isGameOver = true;
+                std::cout << "Gra ukończona! Wszystkie poziomy zaliczone.\n";
             }
+            camera.levelCompleted = false;
         }
-         */
+
+
         // Odblokowanie wyjścia po zebraniu 3 kluczy
         if (camera.keysCollected >= 3) {
             for (auto& item : activeItems) {
@@ -578,24 +614,134 @@ int main() {
         }
 
 
-        // --- usuń lub zakomentuj ten blok jeśli nie chcesz widocznej kostki ---
-/*
-        // narysuj małą kostkę reprezentującą latarkę
-        lampShader.use();
-        lampShader.setMat4("projection", projection);
-        lampShader.setMat4("view", view);
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.1f)); // mała
-        lampShader.setMat4("model", model);
-        lampShader.setVec3("lightColor", lightColor);
 
-        glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        */
+        // EKRANY KOŃCOWE / PRZEJŚCIA
+        if (gameState == GameState::GAME_OVER_LOSE ||
+            gameState == GameState::GAME_OVER_WIN ||
+            gameState == GameState::LEVEL_COMPLETE) {
+
+            glDisable(GL_DEPTH_TEST);
+            shader.use();
+
+            // WYŁĄCZENIE MGŁY I ŚWIATŁA DLA EKRANU KOŃCOWEGO
+            shader.setBool("useTexture", true);
+            shader.setVec3("objectColor", glm::vec3(1.0f));
+            shader.setFloat("lightIntensity", 1.0f);
+            shader.setFloat("cutoff", 9999.0f);
+            shader.setFloat("fogFar", 9999.0f);
+
+            glm::mat4 orthoProj = glm::ortho(0.0f, (float)SCR_WIDTH, 0.0f, (float)SCR_HEIGHT, -1.0f, 1.0f);
+            shader.setMat4("projection", orthoProj);
+            shader.setMat4("view", glm::mat4(1.0f));
+
+            glm::mat4 modelOverlay = glm::mat4(1.0f);
+            modelOverlay = glm::translate(modelOverlay, glm::vec3(SCR_WIDTH * 0.5f, SCR_HEIGHT * 0.5f, 0.0f));
+            modelOverlay = glm::scale(modelOverlay, glm::vec3(SCR_WIDTH, SCR_HEIGHT, 1.0f));
+            shader.setMat4("model", modelOverlay);
+
+            glActiveTexture(GL_TEXTURE0);
+
+            if (gameState == GameState::GAME_OVER_LOSE) {
+                glBindTexture(GL_TEXTURE_2D, gameOverTex);
+            }
+            else if (gameState == GameState::GAME_OVER_WIN) {
+                glBindTexture(GL_TEXTURE_2D, levelCompleteTex);
+            }
+            else if (gameState == GameState::LEVEL_COMPLETE) {
+                glBindTexture(GL_TEXTURE_2D, levelCompleteTex);
+            }
+
+            // UŻYWAMY quadVAO, NIE cubeVAO
+            glBindVertexArray(quadVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
+
+            glEnable(GL_DEPTH_TEST);
+
+            // Sterowanie przejściem:
+            if (gameState == GameState::LEVEL_COMPLETE) {
+                if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS ||
+                    glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+
+                    currentLevel++;
+                    timeRemaining = levelDurations[currentLevel - 1];
+
+                    activeItems.clear();
+                    labyrinth.generateMaze(activeItems);
+                    camera.maze = labyrinth.maze;
+
+                    camera.Position = glm::vec3(1.0f, 0.7f, 1.0f);
+                    camera.keysCollected = 0;
+                    camera.isGameOver = false;
+
+                    gameState = GameState::PLAYING;
+                }
+            }
+            else {
+                if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+                    currentLevel = 1;
+                    timeRemaining = levelDurations[0];
+
+                    activeItems.clear();
+                    labyrinth.generateMaze(activeItems);
+                    camera.maze = labyrinth.maze;
+
+                    camera.Position = glm::vec3(1.0f, 0.7f, 1.0f);
+                    camera.keysCollected = 0;
+                    camera.isGameOver = false;
+
+                    gameState = GameState::PLAYING;
+                }
+            }
+        }
+
+
+        // HUD – pasek czasu
+        {
+            glDisable(GL_DEPTH_TEST);
+            shader.use();
+            shader.setFloat("lightIntensity", 1.0f);
+            shader.setFloat("cutoff", 9999.0f);
+            shader.setFloat("fogFar", 9999.0f);
+            shader.setVec3("lightColor", glm::vec3(1.0f));
+
+
+            glm::mat4 orthoProj = glm::ortho(0.0f, (float)SCR_WIDTH, 0.0f, (float)SCR_HEIGHT, -1.0f, 1.0f);
+            shader.setMat4("projection", orthoProj);
+            shader.setMat4("view", glm::mat4(1.0f));
+
+            float ratio = timeRemaining / levelDurations[currentLevel - 1];
+            ratio = glm::clamp(ratio, 0.0f, 1.0f);
+
+            float barWidth = (SCR_WIDTH - 40.0f) * ratio;
+            float barHeight = 20.0f;
+            float barX = 20.0f + barWidth * 0.5f;
+            float barY = SCR_HEIGHT - 30.0f;
+            glm::vec3 barColor = glm::mix(
+                glm::vec3(1.0f, 0.2f, 0.2f),   // jasny czerwony
+                glm::vec3(0.2f, 1.0f, 0.2f),   // jasny zielony
+                ratio
+            );
+
+
+            glm::mat4 modelBar = glm::mat4(1.0f);
+            modelBar = glm::translate(modelBar, glm::vec3(barX, barY, 0.0f));
+            modelBar = glm::scale(modelBar, glm::vec3(barWidth, barHeight, 1.0f));
+
+            shader.setMat4("model", modelBar);
+            shader.setVec3("objectColor", barColor);
+            shader.setBool("useTexture", false);
+
+            glBindVertexArray(quadVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
+
+            glEnable(GL_DEPTH_TEST);
+        }
 
         glfwSwapBuffers(window);
+   
+
         glfwPollEvents();
     }
 
