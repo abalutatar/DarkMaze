@@ -223,6 +223,7 @@ Mesh loadOBJ(const std::string& path) {
     return mesh;
 }
 
+
 enum class GameState {
     PLAYING,
     LEVEL_COMPLETE,
@@ -292,6 +293,7 @@ int main() {
     unsigned int lavaTex = shader.loadTexture("src/textures/lava.png");
     unsigned int gameOverTex = shader.loadTexture("src/textures/game_over.png");
     unsigned int levelCompleteTex = shader.loadTexture("src/textures/level_complete.png");
+    unsigned int youWonTex = shader.loadTexture("src/textures/you win.png");
 
     // generowanie labiryntu
     labyrinth.generateMaze(activeItems); // Przekazujemy wektor do uzupełnienia
@@ -556,7 +558,7 @@ int main() {
             glBindTexture(GL_TEXTURE_2D, gameOverTex);
         }
         else if (gameState == GameState::GAME_OVER_WIN) {
-            glBindTexture(GL_TEXTURE_2D, levelCompleteTex);
+            glBindTexture(GL_TEXTURE_2D, youWonTex);
         }
         else if (gameState == GameState::LEVEL_COMPLETE) {
             glBindTexture(GL_TEXTURE_2D, levelCompleteTex);
